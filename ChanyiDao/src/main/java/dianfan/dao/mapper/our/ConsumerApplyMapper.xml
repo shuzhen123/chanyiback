@@ -1,0 +1,76 @@
+<?xml version="1.0" encoding="UTF-8"?>    
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"    
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="dianfan.dao.mapper.our.ConsumerApplyMapper">
+	<resultMap id="BaseResultMap" type="dianfan.entities.our.ConsumerApplyModel">
+		<id column="id" property="id" />
+		<result column="apply_user_id" property="applyUserId" />
+		<result column="status" property="status" />
+		<result column="f_reason" property="fReason" />
+		<result column="create_time" property="createTime" />
+		<result column="create_by" property="createBy" />
+		<result column="update_time" property="updateTime" />
+		<result column="update_by" property="updateBy" />
+		<result column="entkbn" property="entkbn" />
+		<result column="version" property="version" />
+	</resultMap>
+	<resultMap id="BaseResultMapRole" type="dianfan.entities.role.Role">
+		<id column="id" property="id" />
+		<result column="role_distinguish" property="roleDistinguish" />
+		<result column="role_name" property="roleName" />
+		<result column="create_time" property="createTime" />
+		<result column="role_description" property="roleDescription" />
+		<result column="sale_discount" property="saleDiscount" />
+		<result column="entkbn" property="entkbn" />
+	</resultMap>
+	<!-- 申请成为消费商-->
+	<insert id="addConsumerApply" parameterType="dianfan.entities.our.ConsumerApplyModel">
+		insert into t_consumer_apply
+		(id,apply_user_id,status,create_time,entkbn,create_by)
+		values
+		(replace(uuid(),'-',''),#{applyUserId},#{status},now(),0,#{createBy})
+	</insert>
+	<!-- 消费商申请审批 -->
+	<insert id="updateConsumerApply" parameterType="dianfan.entities.our.ConsumerApplyModel">
+		update t_consumer_apply set status=#{status},update_by=#{updateBy},
+		<if test="fReason !=null and fReason !=''">f_reason=#{fReason},</if>
+		version=version+1 where id=#{id}
+	</insert>
+	<update id="updateConsumerApplyRole" parameterType="userRole">
+		update t_user_role set roleid = #{roleid},descption = #{descption} where userid=#{userid}
+	</update>
+	<select id="getConsumerApply" parameterType="string" resultType="int">
+	select count(*) from t_consumer_apply where apply_user_id = #{userid} and entkbn=0
+	</select>
+	<!--  获取消费商id -->
+	<select id="getConsumerInfo" parameterType="string" resultType="int">
+	select id from t_consumer_apply where apply_user_id = #{userid} and entkbn=0
+	</select>
+	<select id="getUserRole" parameterType="string" resultMap="BaseResultMapRole">
+	select id,role_distinguish,role_name from m_role where  entkbn=0 and role_distinguish = #{roledistinguish}
+	</select>
+	<!-- 统计消费商 -->
+	<select id="getConsumerNum" parameterType="consumerApplyModel"  resultType="int">
+	select count(tca.id) from t_consumer_apply tca inner join t_user_userinfo uu on uu.id=tca.apply_user_id where 
+	<if test="status !='' and status !=null"> tca.status=#{status} and </if>
+	<if test="nickName !=''"> 
+	<bind name="_nickname" value="'%'+nickName+'%'"/>
+	uu.nick_name like #{_nickname} and </if>
+	<if test="createTimeStart !='' and createTimeEnd !=''"> (tca.create_time &gt; #{createTimeStart} and tca.create_time &lt;= #{createTimeEnd} ) and </if>
+	<if test="createTimeStart !='' and  createTimeEnd ==''"> tca.create_time &gt; #{createTimeStart} and </if>
+	<if test="createTimeStart =='' and createTimeEnd !=''"> tca.create_time &lt;= #{createTimeEnd} and  </if>
+	 tca.entkbn=0 and uu.entkbn=0 
+	</select>
+	<!-- 获取消费商列表 -->
+	<select id="findConsumerList" parameterType="consumerApplyModel" resultMap="BaseResultMap">
+	select tca.id,uu.nick_name nickName,uu.telno,uu.sex,uu.avatar_url avatarUrl,tca.apply_user_id,tca.status,tca.f_reason,tca.create_time from t_consumer_apply tca inner join t_user_userinfo uu on uu.id=tca.apply_user_id where 
+	<if test="status !='' and status !=null"> tca.status=#{status} and </if>
+	<if test="nickName !=''"> 
+	<bind name="_nickname" value="'%'+nickName+'%'"/>
+	 uu.nick_name like #{_nickname} and </if>
+	<if test="createTimeStart !='' and createTimeEnd !=''"> (tca.create_time &gt; #{createTimeStart} and tca.create_time &lt;= #{createTimeEnd} ) and </if>
+	<if test="createTimeStart !='' and createTimeEnd ==''"> tca.create_time &gt; #{createTimeStart} and </if>
+	<if test="createTimeStart =='' and createTimeEnd !=''"> tca.create_time &lt;= #{createTimeEnd} and  </if>
+	 tca.entkbn=0 and uu.entkbn=0 order by tca.status DESC, tca.create_time DESC limit #{start},#{offset}
+	</select>
+</mapper> 

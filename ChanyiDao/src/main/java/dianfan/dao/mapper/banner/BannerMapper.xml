@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="dianfan.dao.mapper.banner.BannerMapper">
+	
+	<!-- 轮播图resultmap -->
+	<resultMap id="bannerMap" type="dianfan.entities.banner.Banner" >
+		<id column="id" property="id"/>
+		<result column="title" property="title"/>
+		<result column="content" property="content"/>
+		<result column="advertorial_id" property="advertorialId"/>
+		<result column="pic_addr" property="picAddr"/>
+		<result column="ad_desc" property="adDesc"/>
+		<result column="sort" property="sort"/>
+		<result column="create_time" property="createTime"/>
+		<result column="create_by" property="createBy"/>
+		<result column="update_time" property="updateTime"/>
+		<result column="update_by" property="updateBy"/>
+		<result column="entkbn" property="entkbn"/>
+		<result column="version" property="version"/>
+	</resultMap>
+	
+
+	<!-- 获取多条轮播图数据  -->
+	<select id="findBanners" resultType="dianfan.entities.banner.BannerModel">
+		select advertorial_id as advertorialId, pic_addr as picAddr from t_index_banner where entkbn=0 order by sort 
+	</select>
+	
+</mapper>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

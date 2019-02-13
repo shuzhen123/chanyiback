@@ -1,0 +1,73 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="dianfan.dao.mapper.base.AreaMapper">
+	
+	<resultMap id="areaMap" type="area" >
+		<id column="prov_code" property="areaCode"/>
+		<result column="prov_name" property="areaName"/>
+		<collection property="lowerCity" ofType="area" >
+			<id column="city_code" property="areaCode"/>
+			<result column="city_name" property="areaName"/>
+			<collection property="lowerCity" ofType="area">
+				<id column="cty_code" property="areaCode"/>
+				<result column="cty_name" property="areaName"/>
+			</collection>
+		</collection>
+	</resultMap>
+	
+	<!-- 获取全部可用城市 -->
+	<select id="findAllArea" resultMap="areaMap">
+		select
+			prov.area_code prov_code, prov.area_name prov_name, 
+			city.area_code city_code, city.area_name city_name,
+			cty.area_code cty_code, cty.area_name cty_name
+		from 
+			m_area_code prov left join  
+			m_area_code city on city.sup_area_code=prov.area_code left join
+			m_area_code cty on cty.sup_area_code=city.area_code
+		where
+			prov.entkbn=0 and city.entkbn=0 and cty.entkbn=0 
+	</select>
+	
+	<!-- 根据地区code获取省市区 -->
+	<select id="getAddrByCode" resultType="string">
+		select
+			concat(
+				L1.area_name
+				<if test='level == 2'>,L2.area_name</if>
+				<if test='level == 3'>,L2.area_name, L3.area_name</if>
+			)
+		from
+			m_area_code L1
+			<if test='level == 2'>, m_area_code L2</if>
+			<if test='level == 3'>, m_area_code L2, m_area_code L3</if>
+		where
+			<if test='level == 1'>L1.area_code = #{cityCode}</if>
+			<if test='level == 2'>L2.sup_area_code = L1.area_code and L2.area_code = #{cityCode}</if>
+			<if test='level == 3'>L3.sup_area_code = L2.area_code and L2.sup_area_code = L1.area_code and L3.area_code = #{cityCode}</if>
+	</select>
+	
+	<!-- 获取城市信息 -->
+	<select id="findCityInfo" parameterType="area" resultType="area">
+		select area_code areaCode, area_name areaName from m_area_code where sup_area_code is not null
+		<if test="areaCode != null">and area_code=#{areaCode}</if>
+		<if test="areaName != null">and area_name=#{areaName}</if>
+	</select>
+</mapper>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

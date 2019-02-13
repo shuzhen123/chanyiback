@@ -1,0 +1,182 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="dianfan.dao.mapper.brokerage.BrokerageMapper">
+	
+	<!-- 获取佣金流水列表总数 -->
+	<select id="findBrokerageCount" parameterType="map" resultType="int">
+		SELECT
+			COUNT(*)
+		FROM
+			t_user_bouns_detail tubd
+		LEFT JOIN t_user_userinfo info ON tubd.user_id = info.id
+		LEFT JOIN t_user_role ureole ON info.id = ureole.userid
+		LEFT JOIN m_role role ON role.id = ureole.roleid
+		WHERE
+			tubd.entkbn = 0
+			<if test=' user != null and user != ""  ' >
+				<bind name="name_" value=" '%' + user + '%'  "/>
+				and info.nick_name like #{name_}
+			</if>
+			<!-- 通过角色搜索 -->
+			<if test='role != null and role != "" '>
+				and role.id = #{role}
+			</if>
+			<if test=' starttime != null and starttime != "" and endtime != null and endtime != "" '>
+				<bind name="_starttime" value="starttime + ' 00:00:00' " />
+				<bind name="endtime_" value="endtime + ' 23:59:59' " />
+				and tubd.create_time between #{_starttime} and #{endtime_} 
+			</if>
+			<if test=' lowfee != null and lowfee != "" and upfee != null and upfee != "" '>
+				and tubd.bouns_fee between #{lowfee} and #{upfee}
+			</if>
+	
+	</select>
+	
+	<!-- 获取佣金流水列表 -->
+	<select id="findBrokerageList" parameterType="map" resultType="UserBounsDetail">
+		SELECT
+			tubd.id id,
+			tubd.user_id userId,
+			tubd.order_no orderNo,
+			tubd.bouns_percent bounsPercent,
+			tubd.bouns_fee bounsFee,
+			tubd.bouns_from bounsFrom,
+			tubd.user_bouns_status userBounsStatus,
+			tubd.reason reason,
+			tubd.c_last_money cLastMoney,
+			tubd.create_time createTime,
+			role.role_name role,
+			role.id roleid,
+			info.nick_name username
+		FROM
+			t_user_bouns_detail tubd
+		LEFT JOIN t_user_userinfo info ON tubd.user_id = info.id
+		LEFT JOIN t_user_role ureole ON info.id = ureole.userid
+		LEFT JOIN m_role role ON role.id = ureole.roleid
+		WHERE
+			tubd.entkbn = 0
+			<if test=' user != null and user != ""  ' >
+				<bind name="name_" value=" '%' + user + '%'  "/>
+				and info.nick_name like #{name_}
+			</if>
+			<if test='role != null and role != "" '>
+				and role.id = #{role}
+			</if>
+			<if test=' starttime != null and starttime != "" and endtime != null and endtime != "" '>
+				<bind name="_starttime" value="starttime + ' 00:00:00' " />
+				<bind name="endtime_" value="endtime + ' 23:59:59' " />
+				and tubd.create_time between #{_starttime} and #{endtime_} 
+			</if>
+			<if test=' lowfee != null and lowfee != "" and upfee != null and upfee != "" '>
+				and tubd.bouns_fee between #{lowfee} and #{upfee}
+			</if>
+		ORDER BY tubd.create_time DESC
+		LIMIT #{start},#{length}
+	</select>
+	
+
+	<!-- 获取用户提现流水表数量 -->
+	<select id="findWithdrawDepositCount" parameterType="map" resultType="int">
+		SELECT
+			COUNT(*)
+		FROM
+			t_user_withdraw_deposit_stream tubd
+		LEFT JOIN t_user_userinfo info ON tubd.user_id = info.id
+		LEFT JOIN t_user_role ureole ON info.id = ureole.userid
+		LEFT JOIN m_role role ON role.id = ureole.roleid
+		WHERE
+			tubd.entkbn = 0
+		<if test=' user != null and user != ""  ' >
+				<bind name="name_" value=" '%' + user + '%'  "/>
+				and info.nick_name like #{name_}
+			</if>
+			<if test='role != null and role != "" '>
+				and role.id = #{role}
+			</if>
+			<if test=' starttime != null and starttime != "" and endtime != null and endtime != "" '>
+				<bind name="_starttime" value="starttime + ' 00:00:00' " />
+				<bind name="endtime_" value="endtime + ' 23:59:59' " />
+				and tubd.create_time between #{_starttime} and #{endtime_} 
+			</if>
+			<if test=' lowfee != null and lowfee != "" and upfee != null and upfee != "" '>
+				and tubd.money between #{lowfee} and #{upfee}
+			</if>
+	</select>
+	<!-- 获取用户提现流水表 -->
+	<select id="findWithdrawDepositList" parameterType="map" resultType="UserWithdrawDepositStream">
+		SELECT
+			tubd.id id,
+			tubd.user_id userId ,
+			tubd.money money,
+			tubd.apply_status applyStatus,
+			tubd.bank_status bankStatus,
+			tubd.bank_f_reason bankFreason,
+			tubd.bank_no bankNo,
+			tubd.wxdeposit_status wxdepositStatus,
+			tubd.wxdeposit_f_reason wxdepositFreason,
+			tubd.wxdeposit_no wxdepositNo,
+			tubd.wxdeposit_t_time wxdepositTtime,
+			tubd.alipay_deposit_status alipayDepositStatus,
+			tubd.alipay_deposit_f_reason alipayDepositFreason,
+			tubd.alipay_deposit_no alipayDepositNo,
+			tubd.alipay_deposit_t_time alipayDepositTtime,
+			tubd.apply_time applyTime,
+			tubd.create_time createTime,
+			role.role_name role,
+			role.id roleid,
+			info.nick_name username
+		FROM
+			t_user_withdraw_deposit_stream tubd
+		LEFT JOIN t_user_userinfo info ON tubd.user_id = info.id
+		LEFT JOIN t_user_role ureole ON info.id = ureole.userid
+		LEFT JOIN m_role role ON role.id = ureole.roleid
+		WHERE
+			tubd.entkbn = 0
+		<if test=' user != null and user != ""  ' >
+				<bind name="name_" value=" '%' + user + '%'  "/>
+				and info.nick_name like #{name_}
+			</if>
+			<if test='role != null and role != "" '>
+				and role.id = #{role}
+			</if>
+			<if test=' starttime != null and starttime != "" and endtime != null and endtime != "" '>
+				<bind name="_starttime" value="starttime + ' 00:00:00' " />
+				<bind name="endtime_" value="endtime + ' 23:59:59' " />
+				and tubd.create_time between #{_starttime} and #{endtime_} 
+			</if>
+			<if test=' lowfee != null and lowfee != "" and upfee != null and upfee != "" '>
+				and tubd.money between #{lowfee} and #{upfee}
+			</if>
+		ORDER BY tubd.create_time DESC
+		LIMIT #{start},#{length}	
+	</select>
+
+
+	<!-- 审批操作 -->
+	<update id="updatawithdrawalApproval" parameterType="map" >
+		UPDATE t_user_withdraw_deposit_stream SET apply_status = #{flag},update_time = now(),
+		<if test="bankno !=null and bankno!=''">bank_no=#{bankno},</if>
+		<if test="bankFReason !=null and bankFReason !=''">bank_f_reason=#{bankFReason},</if>
+		 update_by = #{userid}  WHERE id in
+		<foreach collection="list" index="index" item="item" open="(" separator="," close=")">
+			#{item}
+		</foreach>
+	</update>
+</mapper>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

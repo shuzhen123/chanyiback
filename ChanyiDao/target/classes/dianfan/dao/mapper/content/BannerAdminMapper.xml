@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="dianfan.dao.mapper.content.BannerAdminMapper">
+	
+	<!-- 删除轮播图  -->
+	<update id="delBannerPic" parameterType="map">
+		UPDATE t_index_banner SET entkbn = #{type}, update_time = NOW(), update_by = #{userid} WHERE id in
+		<foreach collection="idList" index="index" item="item" open="(" separator="," close=")">
+			#{item}
+		</foreach>
+	
+	</update>
+
+	<select id="findBannerPicList" parameterType="map" resultType="Banner">
+		SELECT 
+			id, title, content, advertorial_id advertorialId, 
+			pic_addr picAddr, ad_desc adDesc, create_time createTime, 
+			entkbn, sort 
+		FROM 
+			t_index_banner 
+		WHERE 
+			entkbn != 9 
+		<if test=' desc == 0 '>
+			ORDER BY sort 
+		</if>
+		<if test=' desc != 0 '>
+			ORDER BY sort desc
+		</if>
+		LIMIT #{start},#{pageSize}
+		
+	</select>
+	
+	
+</mapper>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

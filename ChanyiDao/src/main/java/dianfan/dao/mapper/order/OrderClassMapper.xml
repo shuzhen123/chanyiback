@@ -1,0 +1,778 @@
+<?xml version="1.0" encoding="UTF-8"?>    
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"    
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="dianfan.dao.mapper.order.OrderClassMapper">
+
+	<!-- 支付订单map -->
+	<resultMap type="dianfan.entities.order.OrderModel" id="ordermap">
+		<id column="order_id" property="orderId" />
+		<result column="goods_type" property="goodsType" />
+		<result column="total_fee" property="totalFee" />
+		<result column="order_status" property="orderStatus" />
+		<result column="create_time" property="createTime" />
+		<result column="orderStartTime" property="orderStartTime" />
+		<result column="orderEndTime" property="orderEndTime" />
+		<!-- 订单中的商品 一对多 -->
+		<collection property="orderGoods" ofType="dianfan.entities.order.OrderGoods">
+			<id column="id" property="id" />
+			<result column="goods_price_id" property="goodsPriceId" />
+			<result column="unit_price" property="unitPrice" />
+			<result column="num" property="num" />
+			<result column="pic_addr" property="picAddr" />
+			<result column="goodsname" property="name" />
+			<!-- 规格码 -->
+			<result column="spec_ids" property="specIds" />
+		</collection>
+		<!-- 订单下面的商品的信息 一对多 -->
+		<!-- <collection property="orderGoods" ofType="orderGoods"> <id column="id" 
+			property="id"/> <result column="goods_id" property="goodsId"/> <result column="unit_price" 
+			property="unitPrice"/> <result column="num" property="num"/> <result column="pic_addr" 
+			property="picAddr"/> <result column="name" property="name"/> </collection> -->
+	</resultMap>
+	<!-- ===============================分隔符========================================== -->
+
+	<!-- 获取用户订单总条数 -->
+	<select id="fildOrderCount" parameterType="map" resultType="int">
+		SELECT count(tor.order_id) FROM (SELECT torder.order_id,torder.user_id  FROM t_order torder LEFT JOIN t_order_goods goods ON goods.order_id = torder.order_id and goods.entkbn=0 
+		LEFT JOIN t_goods_price price ON price.id = goods.goods_price_id WHERE torder.entkbn = 0 
+		<if test='status != null'>
+			AND 
+			<foreach collection="status" item="item" open="(" separator=" or " close=")">torder.order_status = #{item}</foreach>
+		</if>
+		  ) tor WHERE tor.user_id = #{userid}
+	</select>
+
+
+	<!-- 获取用户订单总条数 -->
+	<select id="findOrderListCount" parameterType="map" resultType="int">
+		SELECT
+         count(DISTINCT ordd.order_id) 
+		FROM
+		(
+		SELECT
+		torder.order_id,
+		torder.user_id,
+		torder.goods_type,
+		torder.total_fee,
+		torder.pay_fee,
+		torder.order_status,
+		torder.create_time,
+		torder.goods_status,
+		torder.factory_list_id,
+		torder.entkbn,
+		torder.order_start_time
+		orderStartTime,
+		torder.order_end_time orderEndTime,
+		odd.delivery_status,
+		odd.pickup_date,
+		torder.`name`,
+		torder.telno,
+		torder.area_code,
+		torder.detail_addr,
+		torder.source,
+		torder.cust_message
+		custMessage
+		FROM
+		t_order torder
+		LEFT JOIN (
+		SELECT
+		todr.delivery_status,
+		todr.order_id,
+		tdy.pickup_date
+		FROM
+		t_delivery tdy
+		INNER JOIN t_order_delivery_relate todr ON tdy.id = todr.delivery_id and
+		tdy.entkbn=0
+		) odd ON torder.order_id = odd.order_id and
+		torder.entkbn=0
+		) ordd
+		LEFT JOIN t_trade_ser ts ON ts.order_id = ordd.order_id
+		WHERE
+		<!-- <if test='orderstatus != "00"'> ordd.order_status = #{orderstatus} 
+			AND </if> -->
+		<if test='orderid !=null and orderid != ""'>
+			<bind name="_orderid" value="'%'+orderid+'%'" />
+			ordd.order_id like #{_orderid} AND
+		</if>
+		<if test='orderstatus != null'>
+			ordd.order_status in
+			<foreach collection="orderstatus" item="item" open="("
+				separator="," close=")" index="index">#{item}</foreach>
+			AND
+		</if>
+		<if test='goodstype != "00"'> ordd.goods_type = #{goodstype} AND </if>
+		<if test='consignee != null and consignee !=""'>
+			<bind name="consignees" value="'%'  + consignee + '%'" />
+			ordd.`name` LIKE #{consignees} AND
+		</if>
+		<if test='deliverystatus != "00"'> ordd.delivery_status = #{deliverystatus} AND </if>
+		<if
+			test='ogoodsstatus != null or tgoodsstatus !=null or wgoodsstatus !=null'> (ordd.goods_status = #{ogoodsstatus} or
+			ordd.goods_status=#{tgoodsstatus} or
+			ordd.goods_status=#{wgoodsstatus}) AND
+		</if>
+		<if test='factoryid != null and factoryid != ""'> ordd.factory_list_id = #{factoryid} AND </if>
+		<if
+			test='stmoney != null and stmoney !="" and edmoney !=null and edmoney !=""'> ( CONVERT(ordd.pay_fee, DECIMAL) BETWEEN #{stmoney} AND  #{edmoney} ) AND
+		</if>
+		<if
+			test='startime != null and startime !="" and endtime !=null and endtime !=""'> ( ordd.create_time between #{startime} AND #{endtime} ) AND
+		</if>
+		<if test='payways != "00"'> ts.pay_ways = #{payways} AND </if>
+		<if test='source != "00"'> ordd.source = #{source} AND </if>
+		<if test='paystatus != "00"'> ts.order_status = #{paystatus} AND </if>
+		ordd.entkbn = 0
+	</select>
+
+	<resultMap type="dianfan.entities.order.OrderGoods" id="orderGoods">
+		<id column="id" property="id" />
+		<result column="goods_id" property="goodsId" />
+		<result column="order_id" property="orderId" />
+		<result column="unit_price" property="unitPrice" />
+		<result column="num" property="num" />
+		<result column="pic_addr" property="picAddr" />
+		<result column="name" property="name" />
+	</resultMap>
+	<select id="findGoodss" parameterType="list" resultMap="orderGoods">
+		SELECT DISTINCT 
+		tog.id,tog.order_id ,tog.goods_id, tog.unit_price, tog.num, tog.pic_addr, tog.name,tgl.cps_sale_discount cpsSaleDiscount,tgl.exp_sale_discount expSaleDiscount,tgl.spg_sale_discount spgSaleDiscount
+		FROM
+		t_order_goods tog left join t_goods_list tgl on tog.goods_id=tgl.id 
+		WHERE
+		tog.entkbn = 0 and tog.order_id in 
+		<foreach collection="list" index="index" item="item" open="("
+			separator="," close=")">
+			#{item}
+		</foreach>
+	</select>
+
+
+	<!-- ===============================分隔符========================================== -->
+	<!-- 查询用户支付订单列表 -->
+	<select id="fildOrderList" parameterType="map" resultMap="ordermap">
+		SELECT DISTINCT 
+		torder.order_id, torder.goods_type, torder.total_fee,
+		torder.order_status,
+		torder.create_time , torder.order_start_time
+		orderStartTime ,
+		torder.order_end_time orderEndTime,
+		goods.id, goods.goods_price_id,
+		goods.unit_price, goods.num, goods.pic_addr,
+		goods.name goodsname,
+		price.spec_ids spec_ids   
+		FROM
+		t_order torder 
+		LEFT JOIN t_order_goods goods ON goods.order_id = torder.order_id and goods.entkbn=0 
+		LEFT JOIN t_goods_price price ON price.id = goods.goods_price_id 
+		WHERE
+		<if test='status != null'>
+			<foreach collection="status" item="item" open="(" separator=" or " close=")">torder.order_status = #{item}</foreach>
+			and
+		</if>
+		torder.user_id = #{userid} AND
+		torder.entkbn = 0 
+		ORDER BY
+		torder.create_time DESC
+		LIMIT #{start},#{offset}
+	</select>
+	<!-- 查询用户删除的订单列表 -->
+	<select id="fildOrderListOmit" parameterType="map" resultMap="ordermap">
+		SELECT DISTINCT 
+		torder.order_id, torder.goods_type, torder.total_fee,
+		torder.order_status,
+		torder.create_time , torder.order_start_time
+		orderStartTime ,
+		torder.order_end_time orderEndTime,
+		goods.id, goods.goods_price_id,
+		goods.unit_price, goods.num, goods.pic_addr,
+		goods.name goodsname,
+		price.spec_ids spec_ids 
+		FROM
+		t_order torder 
+		LEFT JOIN t_order_goods goods ON goods.order_id = torder.order_id and goods.entkbn=0 
+		LEFT JOIN t_goods_price price ON price.id = goods.goods_price_id 
+		WHERE
+		torder.user_id = #{userid} AND
+		torder.entkbn = 9  
+		ORDER BY
+		torder.create_time DESC
+		LIMIT #{start},#{offset}
+	</select>
+
+
+
+
+
+
+
+
+
+
+	<!-- ===============================分隔符========================================== -->
+	<!-- 查询用户支付订单列表 (后台) -->
+	<select id="findOrderInfoList" parameterType="map"
+		resultType="dianfan.entities.order.OrderModel">
+		SELECT
+		DISTINCT  
+		ordd.order_id orderId,
+		ordd.user_id userId,
+		ordd.goods_type
+		goodsType,
+		ordd.total_fee totalFee,
+		ordd.pay_fee payFee,
+		ordd.order_status orderStatus,
+		ordd.create_time createTime,
+		ordd.orderStartTime,
+		ordd.orderEndTime,
+		ordd.delivery_status
+		deliveryStatus,
+		ordd.`name` gainName,
+		ordd.telno gainTelno,
+		ordd.area_code areaCode,
+		ordd.detail_addr detailAddr,
+		ts.pay_ways
+		payWays,
+		ts.order_status payStatus,
+		ordd.source,
+		ordd.custMessage,
+		ordd.factory_list_id factoryListId,
+		ordd.goods_status goodsStatus,
+		ordd.pickup_date pickupDate
+		FROM
+		(
+		SELECT
+		torder.order_id,
+		torder.user_id,
+		torder.goods_type,
+		torder.total_fee,
+		torder.pay_fee,
+		torder.order_status,
+		torder.create_time,
+		torder.goods_status,
+		torder.factory_list_id,
+		torder.entkbn,
+		torder.order_start_time
+		orderStartTime,
+		torder.order_end_time orderEndTime,
+		odd.delivery_status,
+		odd.pickup_date,
+		torder.`name`,
+		torder.telno,
+		torder.area_code,
+		torder.detail_addr,
+		torder.source,
+		torder.cust_message
+		custMessage
+		FROM
+		t_order torder
+		LEFT JOIN (
+		SELECT
+		todr.delivery_status,
+		todr.order_id,
+		tdy.pickup_date
+		FROM
+		t_delivery tdy
+		INNER JOIN t_order_delivery_relate todr ON tdy.id = todr.delivery_id
+		and
+		tdy.entkbn=0
+		) odd ON torder.order_id = odd.order_id and
+		torder.entkbn=0
+		) ordd
+		LEFT JOIN t_trade_ser ts ON ts.order_id =
+		ordd.order_id
+		WHERE
+		<!-- <if test='orderstatus != "00"'> ordd.order_status = #{orderstatus} 
+			AND </if> -->
+		<if test='orderid !=null and orderid != ""'>
+			<bind name="_orderid" value="'%'+orderid+'%'" />
+			ordd.order_id like #{_orderid} AND
+		</if>
+		<if test='orderstatus != null'>
+			ordd.order_status in
+			<foreach collection="orderstatus" item="item" open="("
+				separator="," close=")" index="index">#{item}</foreach>
+			AND
+		</if>
+		<if test='goodstype != "00"'> ordd.goods_type = #{goodstype} AND </if>
+		<if test='consignee != null and consignee !=""'>
+			<bind name="consignees" value="'%'  + consignee + '%'" />
+			ordd.`name` LIKE #{consignees} AND
+		</if>
+		<if test='deliverystatus != "00"'> ordd.delivery_status = #{deliverystatus} AND </if>
+		<if
+			test='ogoodsstatus != null or tgoodsstatus !=null or wgoodsstatus !=null'> (ordd.goods_status = #{ogoodsstatus} or
+			ordd.goods_status=#{tgoodsstatus} or
+			ordd.goods_status=#{wgoodsstatus}) AND
+		</if>
+		<if test='factoryid != null and factoryid != ""'> ordd.factory_list_id = #{factoryid} AND </if>
+		<if
+			test='stmoney != null and stmoney !="" and edmoney !=null and edmoney !=""'> ( CONVERT(ordd.pay_fee, DECIMAL) BETWEEN #{stmoney} AND  #{edmoney} ) AND
+		</if>
+		<if
+			test='startime != null and startime !="" and endtime !=null and endtime !=""'> ( ordd.create_time between #{startime} AND #{endtime} ) AND
+		</if>
+		<if test='payways != "00"'> ts.pay_ways = #{payways} AND </if>
+		<if test='source != "00"'> ordd.source = #{source} AND </if>
+		<if test='paystatus != "00"'> ts.order_status = #{paystatus} AND </if>
+		ordd.entkbn = 0
+		ORDER BY ordd.create_time DESC
+		LIMIT #{start},#{offset}
+	</select>
+
+
+	<!-- ===============================分隔符========================================== -->
+
+
+	<resultMap type="dianfan.entities.order.OrderModel" id="confirmorder">
+		<id column="order_id" property="orderid" />
+		<result column="easy_spelling_id" property="easySpellingId" />
+		<result column="user_id" property="userid" />
+		<result column="address_id" property="addressId" />
+		<result column="goods_type" property="goodsType" />
+		<result column="cust_message" property="custMessage" />
+		<result column="total_fee" property="totalFee" />
+		<result column="discount_fee" property="discountFee" />
+		<result column="pay_fee" property="payFee" />
+		<result column="coupon_relate_id" property="couponRelateId" />
+		<result column="order_status" property="orderStatus" />
+		<result column="coupon_id" property="couponId" />
+		<result column="create_time" property="createTime" />
+		<result column="order_start_time" property="orderStartTime" />
+		<result column="order_end_time" property="orderEndTime" />
+	</resultMap>
+
+
+	<!-- 获取订单详情map -->
+	<resultMap type="dianfan.entities.order.OrderModel" id="orderinfomap">
+		<id column="order_id" property="orderId" />
+		<result column="easy_spelling_id" property="easySpellingId" />
+		<result column="user_id" property="userId" />
+		<result column="address_id" property="addressId" />
+		<result column="goods_type" property="goodsType" />
+		<result column="cust_message" property="custMessage" />
+		<result column="total_fee" property="totalFee" />
+		<result column="discount_fee" property="discountFee" />
+		<result column="pay_fee" property="payFee" />
+		<result column="order_status" property="orderStatus" />
+		<result column="factory_list_id" property="factoryListId" />
+		<result column="coupon_id" property="couponId" />
+		<result column="create_time" property="createTime" />
+		<result column="goods_status" property="goodsStatus" />
+		<result column="payStatus" property="payStatus" />
+		<result column="delivery_status" property="deliveryStatus" />
+		<result column="role_reduce_fee" property="roleReduceFee" />
+		<result column="coupon_reduce_fee" property="couponReduceFee" />
+		<result column="spg_reduce_fee" property="spgReduceFee" />
+		<!-- 收货地址 -->
+		<result column="NAME" property="gainName" />
+		<result column="telno" property="gainTelno" />
+		<result column="area_code" property="areaCode" />
+		<result column="detail_addr" property="detailAddr" />
+		<!-- 支付方式 -->
+		<result column="pay_ways" property="payWays" />
+		<!-- 订单中的商品 一对多 -->
+		<collection property="orderGoods" ofType="dianfan.entities.order.OrderGoods">
+			<id column="id" property="id" />
+			<result column="goods_price_id" property="goodsPriceId" />
+			<result column="unit_price" property="unitPrice" />
+			<result column="num" property="num" />
+			<result column="pic_addr" property="picAddr" />
+			<result column="goodsname" property="name" />
+			<!-- 规格码 -->
+			<result column="spec_ids" property="specIds" />
+			<result column="spg_sale_discount" property="spgSaleDiscount" />
+			<result column="exp_sale_discount" property="expSaleDiscount" />
+			<result column="cps_sale_discount" property="cpsSaleDiscount" />
+		</collection>
+	</resultMap>
+
+	<!-- 获取订单详情 -->
+	<select id="fildOrderInfo" parameterType="map" resultMap="orderinfomap">
+		SELECT
+		ord.order_id, ord.easy_spelling_id, ord.user_id, ord.address_id,
+		ord.goods_type, ord.cust_message, ord.total_fee, ord.discount_fee,
+		ord.pay_fee, ord.order_status order_status, ord.create_time,
+		ord.name
+		NAME, ord.telno telno, ord.area_code area_code, ord.detail_addr
+		detail_addr,
+		ser.pay_ways,
+		goods.id, goods.goods_price_id,
+		goods.unit_price, goods.num, goods.pic_addr,
+		goods.name goodsname,
+		price.spec_ids spec_ids,ord.role_reduce_fee,ord.coupon_reduce_fee,ord.spg_reduce_fee  
+
+		FROM
+		t_order ord
+		LEFT JOIN t_trade_ser ser ON
+		ser.order_id = ord.order_id
+		LEFT JOIN t_order_goods goods ON
+		goods.order_id = ord.order_id
+		LEFT JOIN t_goods_price price ON price.id
+		= goods.goods_price_id
+		WHERE
+		ord.order_id = #{orderid} AND ord.user_id =
+		#{userid} AND
+		ord.entkbn = 0
+		ORDER BY
+		goods.create_time,price.create_time
+	</select>
+	<!-- 获取订单详情 -->
+	<select id="queryOrderInfo" parameterType="string" resultMap="orderinfomap">
+		SELECT
+		ord.order_id, ord.easy_spelling_id, ord.user_id, ord.address_id,
+		ord.goods_type, ord.cust_message, ord.total_fee, ord.discount_fee,
+		ord.pay_fee, ord.order_status order_status, ord.create_time,
+		ord.name
+		NAME, ord.telno telno, ord.area_code area_code, ord.detail_addr
+		detail_addr,
+		ser.pay_ways,
+		goods.id, goods.goods_price_id,
+		goods.unit_price, goods.num, goods.pic_addr,
+		goods.name goodsname,
+		price.spec_ids spec_ids,ord.role_reduce_fee,ord.coupon_reduce_fee,ord.spg_reduce_fee  
+
+		FROM
+		t_order ord
+		LEFT JOIN t_trade_ser ser ON
+		ser.order_id = ord.order_id
+		LEFT JOIN t_order_goods goods ON
+		goods.order_id = ord.order_id
+		LEFT JOIN t_goods_price price ON price.id
+		= goods.goods_price_id
+		WHERE
+		ord.order_id = #{orderid} AND 
+		ord.entkbn = 0
+		ORDER BY
+		goods.create_time,price.create_time
+	</select>
+	<!-- 获取订单详情 -->
+	<select id="getBgOrderInfo" parameterType="string" resultMap="orderinfomap">
+		SELECT DISTINCT
+			ord.factory_list_id,
+			ord.order_id,
+			ord.easy_spelling_id,
+			ord.user_id,
+			ord.address_id,
+			ord.goods_type,
+			ord.cust_message,
+			ord.total_fee,
+			ord.discount_fee,
+			ord.pay_fee,
+			ord.order_status,
+			ord.create_time,
+			ord. NAME NAME,
+			ord.telno,
+			ord.area_code,
+			ord.detail_addr,
+			ser.pay_ways,
+			goods.id,
+			goods.goods_price_id,
+			goods.unit_price,
+			goods.num,
+			goods.pic_addr,
+			goods. NAME goodsname,
+			price.spec_ids,
+			ord.coupon_id,
+			ord.goods_status,
+			ser.order_status payStatus,
+			todr.delivery_status,
+			ord.coupon_reduce_fee,
+			ord.role_reduce_fee,
+			ord.spg_reduce_fee,
+           tgl.cps_sale_discount,
+           tgl.exp_sale_discount,
+           tgl.spg_sale_discount   
+		FROM
+			t_order ord
+		LEFT JOIN t_trade_ser ser ON ser.order_id = ord.order_id and ser.entkbn=0 
+		LEFT JOIN t_order_goods goods ON goods.order_id = ord.order_id and goods.entkbn=0 
+		LEFT JOIN t_goods_price price ON price.id = goods.goods_price_id 
+		LEFT JOIN t_order_delivery_relate todr ON todr.order_id = ord.order_id AND todr.entkbn = 0 
+    LEFT JOIN t_goods_list tgl ON tgl.id = goods.goods_id  
+		WHERE  
+		ord.order_id = #{orderid} AND 
+		ord.entkbn = 0
+		ORDER BY
+		goods.create_time,price.create_time
+	</select>
+	<!-- ===============================分隔符========================================== -->
+	<resultMap type="dianfan.entities.goods.GoodsSpec" id="fildSpeclistmap">
+		<id column="id" property="id" />
+		<result column="name" property="typeAndName" />
+	</resultMap>
+	<!-- 获取所有的规格 -->
+	<select id="fildSpecList" resultMap="fildSpeclistmap">
+		select
+		id,
+		CONCAT(spec_catagory, "：", spec_name) name
+		from
+		t_goods_spec
+	</select>
+	<!-- =================================分割符=============================================== -->
+	<resultMap type="dianfan.entities.order.OrderCloseModel" id="orderCloseMap">
+		<id column="order_id" property="orderId" />
+		<result column="goods_type" property="goodsType" />
+		<result column="order_status" property="orderStatus" />
+		<result column="coupon_id" property="couponRelateId" />
+		<result column="order_start_time" property="orderStartTime" />
+		<result column="order_end_time" property="orderEndTime" />
+		<result column="user_id" property="userId" />
+		<result column="version" property="version" />
+	</resultMap>
+	<select id="findAllOrders" parameterType="map" resultMap="orderCloseMap">
+		SELECT
+		ord.order_id,ord.goods_type,ord.order_status,ord.coupon_id,ord.order_start_time,ord.order_end_time,ord.user_id,ord.version
+		FROM
+		t_order ord
+		WHERE
+		ord.goods_type = #{goodsType} AND ord.order_status
+		= #{orderStatus}
+		<if test="nowDateTime != null and  nowDateTime != ''">
+			<![CDATA[AND ord.order_end_time <=  #{nowDateTime} ]]>
+		</if>
+		AND ord.entkbn = 0
+		order by create_time desc
+	</select>
+
+	<!-- 更新交易流水表（存在则更新不存在则插入） -->
+	<insert id="updateTradeStrData" parameterType="tradeSer">
+		insert into
+		t_trade_ser
+		(pay_id,order_id,serial_number,pay_ways,pay_source,order_status,deposit_fee,pay_start_time,create_time)
+		value
+		(replace(uuid(),'-',''), #{orderid}, #{serialNumber}, #{payWays},
+		#{paySource}, '03',
+		#{depositFee}, now(), now())
+		on duplicate key
+		update
+		serial_number=#{serialNumber},
+		pay_ways=#{payWays},
+		pay_source=#{paySource},
+		deposit_fee=#{depositFee},
+		version=version+1
+	</insert>
+
+	<resultMap type="order" id="orderSerMap">
+		<id column="order_id" property="orderid" />
+		<result column="easy_spelling_id" property="easySpellingId" />
+		<result column="goods_type" property="goodsType" />
+		<result column="user_id" property="userid" />
+		<result column="address_id" property="addressId" />
+		<result column="pay_fee" property="payFee" />
+	</resultMap>
+	<!-- 根据流水号（serial_number）获取订单信息 -->
+	<select id="findTradeSerByserialNumber" parameterType="string"
+		resultMap="orderSerMap">
+		select
+		o.order_id, o.easy_spelling_id, o.goods_type,
+		o.user_id, o.address_id,
+		t.deposit_fee pay_fee
+		FROM
+		t_order o,
+		t_trade_ser t
+		where
+		o.order_id=t.order_id and
+		t.serial_number=#{serial_number} and
+		t.order_status='03' and t.entkbn=0
+		and o.order_status='01' and o.entkbn=0
+	</select>
+
+	<!-- 确认订单 -->
+	<insert id="addConfirmOrder" parameterType="order">
+		insert into t_order
+		(order_id,easy_spelling_id,user_id,address_id,goods_type,cust_message,total_fee,discount_fee,pay_fee,coupon_relate_id,factory_list_id,order_status,goods_status,coupon_id,create_time,entkbn,order_start_time,order_end_time,name,telno,area_code,detail_addr,create_by,source,coupon_reduce_fee,role_reduce_fee)
+		values
+		(#{orderid},#{easySpellingId},#{userid},#{addressId},#{goodsType},#{custMessage},#{totalFee},#{discountFee},#{payFee},#{couponRelateId},#{factoryListId},#{orderStatus},#{goodsStatus},#{couponId},now(),0,#{orderStartTime},#{orderEndTime},#{name},#{telno},#{areaCode},#{detailAddr},#{createBy},#{source},#{couponReduceFee},#{roleReduceFee})
+	</insert>
+
+
+	<!-- 获取收货人姓名、详细地址、手机、地区code -->
+	<!-- 支付订单map -->
+	<resultMap type="dianfan.entities.order.ConsigneeModel" id="consigneeInfoMap">
+		<id column="name" property="name" />
+		<result column="telno" property="telno" />
+		<result column="area_code" property="areaCode" />
+		<result column="detail_addr" property="detailAddr" />
+	</resultMap>
+	<select id="getConsigneeInfo" parameterType="string" resultMap="consigneeInfoMap">
+		select name,telno,area_code,detail_addr from t_user_address where
+		id=#{addressid}
+	</select>
+	<!-- 关闭已支付订单 -->
+	<resultMap type="dianfan.entities.order.OrderCloseOutEspEndTimeModel"
+		id="orderPayCloseMap">
+		<id column="order_id" property="orderId" />
+		<result column="pay_fee" property="payFee" />
+		<result column="total_fee" property="totalFee" />
+		<result column="discount_fee" property="discountFee" />
+		<result column="goods_type" property="goodsType" />
+		<result column="order_status" property="orderStatus" />
+		<result column="coupon_id" property="couponRelateId" />
+		<result column="end_time" property="endTime" />
+		<result column="order_end_time" property="orderEndTime" />
+		<result column="user_id" property="userId" />
+		<result column="version" property="version" />
+	</resultMap>
+	<select id="findCloseOutEspEndTimeOrders" parameterType="map"
+		resultMap="orderPayCloseMap">
+		SELECT
+		ord.order_id order_id,
+		ord.pay_fee pay_fee,
+		ord.total_fee
+		total_fee,
+		ord.discount_fee discount_fee,
+		ord.goods_type goods_type,
+		ord.order_status order_status,
+		ord.coupon_id coupon_id,
+		tes.end_time
+		end_time,
+		ord.order_end_time order_end_time,
+		ord.user_id user_id,
+		ord.version version
+		FROM
+		t_order ord
+		INNER JOIN t_easy_spelling tes ON
+		ord.easy_spelling_id = tes.id
+		WHERE
+		ord.goods_type = #{goodsType} and
+		ord.order_status = #{orderStatus}
+		<if test="currentDate != null and  currentDate != ''">
+				<![CDATA[AND tes.end_time <= #{currentDate} ]]>
+		</if>
+		AND ord.entkbn = 0
+		order by ord.order_end_time asc
+	</select>
+
+	<resultMap type="tradeSer" id="tradeSerMap">
+		<id column="pay_id" property="payid" />
+		<result column="order_id" property="orderid" />
+		<result column="serial_number" property="serialNumber" />
+		<result column="trade_no" property="tradeNo" />
+		<result column="pay_ways" property="payWays" />
+		<result column="pay_source" property="paySource" />
+		<result column="deposit_fee" property="depositFee" />
+		<result column="refund_reason" property="refundReason" />
+		<result column="refund_money" property="refundMoney" />
+	</resultMap>
+	<!-- 获取待退款订单 -->
+	<select id="findRefundOrders" parameterType="list" resultMap="tradeSerMap">
+		select
+		pay_id, order_id, serial_number, trade_no, pay_ways,
+		pay_source,
+		deposit_fee, refund_reason, refund_money
+		from
+		t_trade_ser
+		where
+		order_id
+		in
+		<foreach collection="list" item="item" open="(" separator=","
+			close=")">#{item}</foreach>
+	</select>
+	<insert id="addOrderGoods" parameterType="list">
+		insert into t_order_goods
+		(id,order_id,goods_id,goods_price_id,unit_price,num,pic_addr,name,create_time,entkbn,create_by)
+		values
+		<foreach collection="og" item="item" separator=",">
+			(#{item.id},#{item.orderId},#{item.goodsId},#{item.goodsPriceId},#{item.unitPrice},#{item.num},#{item.picAddr},#{item.name},now(),0,#{item.createBy})
+		</foreach>
+	</insert>
+	<!-- 修改收货人信息 -->
+	<update id="updateBgOrderConsigneeInfo" parameterType="map">
+		update t_order set
+		<if test="areacode !=null"> area_code=#{areacode},</if>
+		<if test="name !=null">name=#{name},</if>
+		<if test="telno !=null">telno=#{telno},</if>
+		<if test="detailaddr !=null">detail_addr=#{detailaddr}, </if>
+		update_by = #{userid},
+		version=version+1 where order_id=#{orderid} and
+		version=#{version}
+	</update>
+	<!-- 修改金额或客户备注信息 以及其他信息 -->
+	<update id="updateBgOrderPriceOrMessage" parameterType="map">
+		update t_order set
+		<if test="money !=null"> pay_fee=#{money}, </if>
+		<if test="discount !=null"> discount_fee=#{discount}, </if>
+		<if test="custmessage !=null">cust_message=#{custmessage},</if>
+		<if test="orderstatus !=null">order_status=#{orderstatus},</if>
+		<if test="goodsstatus !=null">goods_status=#{goodsstatus},</if>
+		<if test="factoryid !=null and goodsstatus ==null">factory_list_id=#{factoryid},goods_status='12',</if>
+		update_by = #{userid},
+		version=version+1 where order_id=#{orderid} and
+		version=#{version}
+	</update>
+	<!-- 查询物流商品信息 -->
+	<select id="findGoodsInfoByOrderId" parameterType="string"
+		resultType="goods">
+		SELECT
+		tgl.id,
+		tgl.brand_no brandNo,
+		tgl.collection_num
+		collectionNum,
+		tgl.goods_category goodsCategory,
+		tgl.goods_classify_id
+		goodsClassifyId,
+		tgl.goods_desc goodsDesc,
+		tgl.goods_title goodsTitle,
+		tgl.goods_title_en goodsTitleEn,
+		tgl.guarantee_money guaranteeMoney,
+		tgl.height,
+		tgl.install_flag installFlag,
+		tgl.is_cod isCod,
+		tgl.is_easy_spelling isEasySpelling,
+		tgl.is_fragile isFragile,
+		tgl.is_guarantee isGuarantee,
+		tgl.is_staff_easy_spelling
+		isStaffEasySpelling,
+		tgl.length,
+		tgl.on_door_pick_up onDoorPickUp,
+		tgl.price,
+		tgl.price_easy_spelling priceEasySpelling,
+		tgl.product_sku
+		productSku,
+		tgl.receiveable,
+		tgl.sales_count salesCount,
+		tgl.thrid_category_no thridCategoryNo,
+		tgl.upperlower,
+		tgl.weight,
+		tgl.width,
+		tog.num
+		FROM
+		t_order_goods tog
+		INNER JOIN t_goods_list tgl ON
+		tog.goods_id = tgl.id
+		AND tgl.entkbn = 0
+		AND tog.entkbn = 0
+		LEFT JOIN
+		t_goods_price tgp ON tgl.id = tgp.goods_id
+		AND tgp.entkbn = 0
+		WHERE
+		tog.order_id = #{orderid}
+		GROUP BY
+		tog.id
+	</select>
+
+	<!-- 新增体验店内商品内容 -->
+	<insert id="addExperiencestoreOrder" parameterType="map">
+		INSERT INTO t_experiencestore_order
+		(id,experiencestore_apply_id,order_id,goods_id,create_time) VALUES
+		<foreach item="item" index="index" collection="orderGoods"
+			separator=",">
+			(replace(uuid(),'-',''), #{shopId},
+			#{orderid},#{item.goodsId},now())
+		</foreach>
+	</insert>
+
+	<update id="updateAfterSale" parameterType="afterSale">
+		update t_after_sale set
+		<if test="resultFReason !=null and resultFReason !=''">result_f_reason=#{resultFReason},</if>
+		<if test="deliveryId !=null and deliveryId !=''">delivery_id=#{deliveryId},</if>
+		result=#{result},update_by=#{updateBy},version=version+1 where
+		id=#{id}
+	</update>
+
+	<!-- 商品销量+1 -->
+	<update id="goodsSalesCountInc" parameterType="list">
+		update t_goods_list set sales_count=sales_count+1 where  
+		<foreach collection="list" item="item" separator=" or " >id=#{item}</foreach>
+	</update>
+</mapper> 

@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8"?>    
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"    
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="dianfan.dao.mapper.our.SettingSwitchsMapper">
+	<resultMap id="BaseResultMap" type="dianfan.entities.our.SettingSwitchsModel">
+		<id column="id" property="id" />
+		<result column="consumer_apply_flag" property="consumerApplyFlag" />
+		<result column="consumer_des" property="consumerDes" />
+		<result column="create_time" property="createTime"/>
+		<result column="create_by" property="createBy"/>
+		<result column="update_time" property="updateTime"/>
+		<result column="update_by" property="updateBy"/>
+		<result column="entkbn" property="entkbn"/>
+	</resultMap>
+	<!-- 设置开关表（消费商审批开关(默认开启)）-->
+	<select id="getSettingSwitchs" resultType="Integer">
+		select consumer_apply_flag  from m_setting_switchs
+	</select>
+</mapper> 

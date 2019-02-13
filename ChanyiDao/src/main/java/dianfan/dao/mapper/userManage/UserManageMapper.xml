@@ -1,0 +1,141 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="dianfan.dao.mapper.userManage.UserManageMapper">
+	
+	<!-- 获取用户列表数量 -->
+	<select id="findUserCount" resultType="int">
+		SELECT
+			COUNT(*) 
+		FROM
+			t_user_userinfo info LEFT JOIN
+			t_user_role role ON info.id = role.userid LEFT JOIN 
+			m_role trole ON role.roleid = trole.id
+		WHERE
+			info.entkbn != 9
+			<if test=' name != null and name != ""  ' >
+				<bind name="name_" value=" '%' + name + '%'  "/>
+				and info.nick_name like #{name_}
+			</if>
+			<if test='telno != null and telno != "" '>
+				<bind name="telno_" value=" '%' + telno + '%'  "/>
+				and info.telno like #{telno_}
+			</if>
+			<!-- 通过性别搜索 -->
+			<if test='sex != null and sex != "" '>
+				and info.sex = #{sex}
+			</if>
+			<!-- 通过区域搜索 -->
+			<if test='areacode != null and areacode != "" '>
+				and info.area_code = #{areacode}
+			</if>
+			<!-- 通过角色搜索 -->
+			<if test='role != null and role != "" '>
+				and trole.id = #{role}
+			</if>
+			<if test='source != null and source != "" '>
+				and info.source = #{source}
+			</if>
+			<if test=' starttime != null and starttime != "" and endtime != null and endtime != "" '>
+				<bind name="_starttime" value="starttime + ' 00:00:00' " />
+				<bind name="endtime_" value="endtime + ' 23:59:59' " />
+				and info.create_time between #{_starttime} and #{endtime_} 
+			</if>
+		
+	</select>
+	
+	<!-- 获取用户列表 -->
+	<select id="findUserList" parameterType="map" resultType="dianfan.entities.UserInfo">
+		SELECT
+			info.id ,
+			info.union_id unionId,
+			info.wxpub_openid wxpubOpenid,
+			info.wxsmall_openid wxsmallOpenid,
+			info.nick_name nickName,
+			info.country,
+			info.sex,
+			info.avatar_url avatarUrl,
+			info.telno,
+			info.area_code areaCode,
+			info.bank_card_no bankCardNo,
+			info.bank_card_name bankCardName,
+			info.bank_short bankShort,
+			info.qr_num qrNum,
+			info.extra_id extraId,
+			info.create_time createTime,
+			info.last_money lastMoney,
+			info.source,
+			info.entkbn,
+
+			role.roleid roleid,
+			trole.role_name role
+		FROM
+			t_user_userinfo info LEFT JOIN
+			t_user_role role ON info.id = role.userid LEFT JOIN 
+			m_role trole ON role.roleid = trole.id
+		WHERE
+			info.entkbn != 9
+			<if test=' name != null and name != ""  ' >
+				<bind name="name_" value=" '%' + name + '%'  "/>
+				and info.nick_name like #{name_}
+			</if>
+			<if test='telno != null and telno != "" '>
+				<bind name="telno_" value=" '%' + telno + '%'  "/>
+				and info.telno like #{telno_}
+			</if>
+			<!-- 通过性别搜索 -->
+			<if test='sex != null and sex != "" '>
+				and info.sex = #{sex}
+			</if>
+			<!-- 用户状态搜索 -->
+			<if test='entkbn != null and entkbn != "" '>
+				and info.entkbn = #{entkbn}
+			</if>
+			<!-- 通过区域搜索 -->
+			<if test='areacode != null and areacode != "" '>
+				and info.area_code = #{areacode}
+			</if>
+			<!-- 通过角色搜索 -->
+			<if test='role != null and role != "" '>
+				and trole.id = #{role}
+			</if>
+			<if test='source != null and source != "" '>
+				and info.source = #{source}
+			</if>
+			<if test=' starttime != null and starttime != "" and endtime != null and endtime != "" '>
+				<bind name="_starttime" value="starttime + ' 00:00:00' " />
+				<bind name="endtime_" value="endtime + ' 23:59:59' " />
+				and info.create_time between #{_starttime} and #{endtime_} 
+			</if>
+		ORDER BY info.create_time DESC
+		LIMIT #{start},#{pageSize}
+	</select>
+	
+	
+	<!--  更新用户状态   -->
+	<update id="updataUserType" parameterType="map">
+		UPDATE t_user_userinfo SET entkbn = #{type} ,update_time = NOW() ,update_by = #{userid} 
+		WHERE id in 
+		<foreach collection="list" index="index" item="item" open="(" separator="," close=")">
+			#{item}
+		</foreach>
+	</update>
+	
+
+</mapper>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

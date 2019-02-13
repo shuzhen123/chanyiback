@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="dianfan.dao.mapper.advertorial.AdvertorialClassifyMapper">
+	
+  <!-- 文章类型resultmap -->
+  <resultMap id="advertorialClassifyMap" type="dianfan.entities.advertorialclassify.AdvertorialClassify" >
+    <id column="classify_id" property="classifyId"/>
+    <result column="classify_name" property="classifyName"/>
+    <result column="classify_parent_id" property="classifyParentId"/>
+    <result column="classify_nav_sort" property="classifyNavSort"/>
+    <result column="pic_addr" property="picAddr"/>
+    <result column="create_time" property="createTime"/>
+    <result column="create_by" property="createBy"/>
+    <result column="update_time" property="updateTime"/>
+    <result column="update_by" property="updateBy"/>
+    <result column="entkbn" property="entkbn"/>
+    <result column="version" property="version"/>
+  </resultMap>
+	
+	<!-- 获取多条文章分类数据  -->
+	<select id="findAdvertorialClassifys" resultType="dianfan.entities.advertorialclassify.AdvertorialClassifyModel">
+		select classify_id as classifyId,classify_name as classifyName,pic_addr as picAddr,create_by as createBy from t_advertorial_classify where entkbn = 0;
+	</select>
+	
+</mapper>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

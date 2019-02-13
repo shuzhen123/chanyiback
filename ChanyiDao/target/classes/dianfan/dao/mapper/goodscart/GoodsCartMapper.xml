@@ -1,0 +1,203 @@
+<?xml version="1.0" encoding="UTF-8"?>    
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"    
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="dianfan.dao.mapper.goodscart.GoodsCartMapper">
+	<resultMap id="BaseResultMap" type="dianfan.entities.goodscart.GoodsCartModel">
+		<id column="id" property="id" />
+		<result column="user_id" property="userId" />
+		<result column="goods_id" property="goodsId" />
+		<result column="goods_price_id" property="goodsPriceId" />
+		<result column="name" property="name" />
+		<result column="num" property="num" />
+		<result column="unit" property="unit" />
+		<result column="pic_addr" property="picAddr" />
+		<result column="join_time" property="joinTime" />
+		<result column="entkbn" property="entkbn" />
+		<result column="version" property="version" />
+		<result column="price" property="price" />
+	</resultMap>
+		<resultMap id="GoodsBaseResultMap" type="dianfan.entities.our.GoodsModel">
+		<id column="id" property="id"  />
+		<result column="goods_title" property="goodsTitle"  />
+		<result column="is_easy_spelling" property="isEasySpelling"  />
+		<result column="is_staff_easy_spelling" property="isStaffEasySpelling"  />
+		<result column="goods_title_en" property="goodsTitleEn"  />
+		<result column="goods_classify_id" property="goodsClassifyId"  />
+		<result column="goods_desc" property="goodsDesc"  />
+		<result column="price" property="price"  />
+		<result column="collection_num" property="collectionNum"  />
+		<result column="upperlower" property="upperlower"  />
+		<result column="goods_category" property="goodsCategory"  />
+		<result column="create_time" property="createTime"  />
+		<result column="entkbn" property="entkbn"  />
+		<result column="price_easy_spelling" property="priceEasySpelling"  />
+	</resultMap>
+		<resultMap id="GoodsPriceBaseResultMap" type="dianfan.entities.goods.GoodsPriceModel">
+		<id column="id" property="id"  />
+		<result column="goods_id" property="goodsId"  />
+		<result column="spec_ids" property="specIds"  />
+		<result column="goods_pic" property="goodsPic"  />
+		<result column="price" property="price"  />
+		<result column="create_time" property="createTime"  />
+		<result column="price_easy_spelling" property="priceEasySpelling"  />
+		<result column="goods_title_en" property="goodsTitleEn"  />
+<!-- 		<result column="entkbn" property="entkbn"  /> -->
+	</resultMap>
+		<resultMap id="GoodsPicBaseResultMap" type="dianfan.entities.goods.GoodsPics">
+		<id column="pic_id" property="picId"  />
+		<result column="goods_id" property="goodsId"  />
+		<result column="pic_type" property="picType"  />
+		<result column="pic_pc_mobile" property="picPcMobile"  />
+		<result column="pic_sort" property="picSort"  />
+		<result column="pic_addr" property="picAddr"  />
+		<result column="create_time" property="createTime"  />
+		<result column="entkbn" property="entkbn"  />
+	</resultMap>
+		<resultMap id="GoodsSpecBaseResultMap" type="dianfan.entities.goods.GoodsSpec">
+		<id column="id" property="id"  />
+		<result column="goods_id" property="goodsId"  />
+		<result column="spec_name" property="specName"  />
+		<result column="spec_catagory" property="specCatagory"  />
+	</resultMap>
+	<!--  购物车商品规格显示列表-->
+		<resultMap id="GoodsCartSpecResultMap" type="dianfan.entities.goodscart.GoodsCartModel">
+		<id column="id" property="id" />
+		<result column="user_id" property="userId" />
+		<result column="goods_id" property="goodsId" />
+		<result column="goods_price_id" property="goodsPriceId" />
+		<result column="name" property="name" />
+		<result column="num" property="num" />
+		<result column="pic_addr" property="picAddr" />
+		<result column="spec_ids" property="specIds" />
+		<result column="price" property="price" />
+		<result column="spec_name" property="specName" />
+		<result column="goods_classify_id" property="goodsClassifyId"  />
+		<result column="goods_title_en" property="goodsTitleEn"  />
+	</resultMap>
+	<sql id="Base_Column_List" >
+         id, goods_title, is_easy_spelling, is_staff_easy_spelling, goods_title_en,goods_classify_id,goods_desc, 
+         price, collection_num, upperlower, goods_category, create_time,entkbn,price_easy_spelling
+       </sql>
+       <sql id="GoodsPrice_Column_List" >
+         id, goods_id, spec_ids, goods_pic, price, create_time,entkbn 
+       </sql>
+	<!-- 添加购物车-->
+	<insert id="addShoppingCart" parameterType="dianfan.entities.goodscart.GoodsCartModel" >
+		insert into t_goods_cart
+		(id,user_id,goods_id,goods_price_id,name,num,unit,pic_addr,join_time,entkbn)
+		values
+		(replace(uuid(),'-',''),#{userId},#{goodsId},#{goodsPriceId},#{name},#{num},#{unit},#{picAddr},now(),0)
+	</insert>
+	<!-- 修改购物车数量-->
+	<update id="updateGoodsNum" parameterType="map" >
+		update t_goods_cart set num=#{num},version=version+1 where id = #{id}
+	</update>
+	<select id="getGoodsInfo" parameterType="string" resultMap="GoodsBaseResultMap">
+		select goods_title from t_goods_list where id = #{goodsid} and entkbn=0
+	</select>
+	<!-- 获取商品价格表信息 -->
+	<select id="getGoodsPriceInfo" parameterType="string" resultMap="GoodsPriceBaseResultMap">
+		select id,goods_id,spec_ids,goods_pic,price,price_easy_spelling from t_goods_price where id = #{goodspriceid} and entkbn=0
+	</select>
+	<!--获取商品图片信息  -->
+	<select id="getGoodsPicInfo" parameterType="dianfan.entities.goods.GoodsPics" resultMap="GoodsPicBaseResultMap">
+		select pic_id,goods_id,pic_type,pic_sort,pic_addr from t_goods_pics where goods_id = #{goodsId} and entkbn=0 and pic_type = #{picType} and pic_pc_mobile = #{picPcMobile}
+		
+	</select>
+	<!-- 根据userid查询购物车商品信息列表显示  -->
+	<select id="findShoppingCartList" parameterType="map" resultMap="BaseResultMap">
+		select id,goods_id,goods_price_id,name,num,pic_addr,unit,entkbn from t_goods_cart where user_id = #{userid} and (entkbn=0 or entkbn=1) order by entkbn LIMIT #{start},#{offset}
+	</select>
+	<!-- 根据购物车id查询购物车商品信息列表  -->
+	<select id="findGoodsCartList" parameterType="string" resultMap="BaseResultMap">
+		select gc.id,gc.goods_id,gc.goods_price_id,gc.name,gc.num,gc.pic_addr,gp.price from t_goods_cart gc left join t_goods_price gp on gc.goods_price_id = gp.id where gc.id in <foreach collection="goodscartids" item="goodscartid" open="(" close=")" separator=",">
+    #{goodscartid}
+   </foreach> and gc.goods_price_id is not null 
+    union all 
+		select gc.id,gc.goods_id,gc.goods_price_id,gc.name,gc.num,gc.pic_addr,gp.price from t_goods_cart gc left join t_goods_price gp on gc.goods_price_id = gp.id where gc.id in <foreach collection="goodscartids" item="goodscartid" open="(" close=")" separator=",">
+    #{goodscartid}
+   </foreach>
+    and gc.goods_price_id is null
+	</select>
+	<!-- 根据购物车id查询购物车商品信息列表  -->
+	<select id="findGoodsCartLists" parameterType="string" resultMap="BaseResultMap">
+		select gc.id,gc.goods_id,gc.goods_price_id,gc.name,gc.num,gc.pic_addr from t_goods_cart gc  where gc.id in <foreach collection="goodscartids" item="goodscartid" open="(" close=")" separator=",">
+    #{goodscartid}
+   </foreach> 
+	</select>
+	<select id="findGoodsCart" parameterType="string" resultMap="BaseResultMap">
+		select gc.id,gc.goods_id,gc.goods_price_id,gc.name,gc.num,gc.pic_addr from t_goods_cart gc  where gc.entkbn=0 and gc.user_id = #{userid}
+	</select>
+	
+	<!-- 根据userid统计购物车数量 -->
+	<select id="getGoodsCartNum" parameterType="string" resultType="Integer">
+		select count(*) from t_goods_cart where user_id = #{userid} and (entkbn=0 or entkbn=1)
+	</select>
+	<!-- 根据userid统计购物车单件商品数量 -->
+	<select id="getSingleGoodsNum" parameterType="string" resultType="Integer">
+		select num from t_goods_cart where user_id = #{userid} and goods_id ={goodsId} 
+		<if test="goods_price_id !=null and goods_price_id !=''"> and goods_price_id=#{goodsPriceId} </if> and entkbn=0
+	</select>
+	<!-- 根据购物车id查询购物车商品信息  -->
+	<select id="getShoppingCarGoodsInfo" parameterType="string" resultMap="BaseResultMap">
+		select id,goods_id,goods_price_id,name,num,pic_addr from t_goods_cart where id = #{goodscartid} and entkbn=0
+	</select>
+	<!-- 根据商品价格id修改品类  -->
+	<update id="updateShoppingCarGoodsSpec" parameterType="map">
+		update t_goods_cart set goods_price_id=#{goodspriceid},num=#{num},version=version+1 where id = #{goodscartid} and version=#{version}
+	</update>
+	<!-- 查询商品列表 -->
+	<select id="findGoodsList" parameterType="string" resultMap="GoodsBaseResultMap">
+		select <include refid="Base_Column_List" /> from t_goods_list where  id in <foreach collection="goodsids" item="goodsid" open="(" close=")" separator=",">
+    #{goodsid}
+   </foreach>
+    order by create_time desc
+	</select>
+	<!-- 获取商品信息 -->
+	<select id="getGoodsInfomation" parameterType="string" resultMap="GoodsBaseResultMap">
+		select <include refid="Base_Column_List" /> from t_goods_list where id =#{goodsid}
+	</select>
+	<select id="findGoodsListClassIds" parameterType="string" resultMap="GoodsBaseResultMap">
+		select <include refid="Base_Column_List" /> from t_goods_list where id in <foreach collection="gcmlists" item="item" open="(" close=")" separator=",">
+    #{item.goodsId}
+   </foreach>
+	</select>
+	<!-- 查询商品价格列表 -->
+	<select id="findGoodsPriceList" parameterType="string" resultMap="GoodsPriceBaseResultMap">
+		select <include refid="GoodsPrice_Column_List" /> from t_goods_price where id in <foreach collection="goodspriceids" item="goodspriceid" open="(" close=")" separator=",">
+    #{goodspriceid}
+   </foreach> 
+     order by create_time desc
+	</select>
+	<select id="findGoodsSpecList" parameterType="string" resultMap="GoodsSpecBaseResultMap">
+		select id,goods_id, spec_name,spec_catagory from t_goods_spec where id in <foreach collection="array" item="goodsspecid" open="(" separator="," close=")">
+    #{goodsspecid}
+   </foreach>
+	</select>
+	<!-- 统计商品规格是否有删除 -->
+	<select id="getDelGoodsSpecNum" parameterType="string" resultType="int">
+		select count(*) from t_goods_spec where entkbn=9 id in <foreach collection="specs" item="goodsspecid" open="(" separator="," close=")">
+    #{goodsspecid}
+   </foreach>
+	</select>
+	<select id="getGoodsCartSpecList" parameterType="goodsCartModels" resultMap="GoodsCartSpecResultMap">
+    SELECT gspc.id, gspc.`name`, gspc.goods_id, gspc.goods_price_id, gspc.pic_addr, gspc.num, gspc.price, gspc.spec_name, glt.goods_classify_id,gspc.spec_ids,glt.goods_title_en FROM (
+    SELECT gc.id, gc.`name`, gc.goods_id, gc.goods_price_id, gc.pic_addr, gc.num, gsp.price, gsp.spec_name, gc.user_id,gsp.spec_ids,gc.entkbn FROM t_goods_cart gc LEFT JOIN ( 
+    SELECT group_concat(gs.spec_catagory,':',gs.spec_name) AS spec_name, gp.id AS gpid, gp.spec_ids, gp.goods_pic, gp.price FROM t_goods_price gp, t_goods_spec gs WHERE gp.goods_id = gs.goods_id 
+	AND gs.id IN  <foreach item="idItem" index="index" collection="goodsspecids" open="(" close=")" separator=",">
+     #{idItem}
+   </foreach>group by gp.id) gsp on gc.goods_price_id=gsp.gpid) gspc INNER JOIN t_goods_list glt ON gspc.goods_id=glt.id  
+	where gspc.goods_id=#{goodsid} and  gspc.user_id=#{userid} and gspc.goods_price_id=#{goodspriceid} AND (gspc.entkbn=0 or gspc.entkbn=1); 
+	</select>
+	<!-- 根据userid、goodsid或者goodspriceid 查询商品是否在购物车-->
+	<select id="getGoodsCartByUserGidGpid" parameterType="goodsCartModels" resultMap="GoodsCartSpecResultMap">
+	select id,user_id,goods_id,goods_price_id,num from t_goods_cart where user_id=#{userid} and goods_id = #{goodsid} and entkbn=0
+	<if test="goodspriceid !=null"> and goods_price_id = #{goodspriceid}</if>
+	</select>
+	<!-- 删除购物车-->
+	<update id="delShoppingCart" parameterType="dianfan.entities.goodscart.GoodsCartModel" >
+		update t_goods_cart set entkbn=9 where id in  <foreach item="item" index="index" collection="goodscartids" open="(" close=")" separator=",">
+		  #{item}
+		 </foreach>
+	</update>
+</mapper> 

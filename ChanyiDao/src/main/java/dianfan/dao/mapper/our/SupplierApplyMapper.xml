@@ -1,0 +1,97 @@
+<?xml version="1.0" encoding="UTF-8"?>    
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"    
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="dianfan.dao.mapper.our.SupplierApplyMapper">
+	<resultMap id="BaseResultMap" type="dianfan.entities.our.SupplierApply">
+		<id column="id" property="id" />
+		<result column="status" property="status" />
+		<result column="company_name" property="companyName" />
+		<result column="registered_capital_money" property="registeredCapitalMoney" />
+		<result column="supply_category" property="supplyCategory" />
+		<result column="cooperation_case" property="cooperationCase" />
+		<result column="contacts" property="contacts" />
+		<result column="contacts_phone" property="contactsPhone" />
+		<result column="e_mail" property="eMail" />
+		<result column="user_id" property="userId" />
+		<result column="f_reason" property="fReason" />
+		<result column="create_time" property="createTime" />
+		<result column="create_by" property="createBy" />
+		<result column="update_time" property="updateTime" />
+		<result column="update_by" property="updateBy" />
+		<result column="entkbn" property="entkbn" />
+		<result column="version" property="version" />
+	</resultMap>
+	<resultMap id="BaseResultMapRole" type="dianfan.entities.role.Role">
+		<id column="id" property="id" />
+		<result column="role_distinguish" property="roleDistinguish" />
+		<result column="role_name" property="roleName" />
+		<result column="create_time" property="createTime" />
+		<result column="role_description" property="roleDescription" />
+		<result column="sale_discount" property="saleDiscount" />
+		<result column="entkbn" property="entkbn" />
+	</resultMap>
+	<!-- 申请成为供应商-->
+	<insert id="addSupplierApply" parameterType="dianfan.entities.our.SupplierApply">
+		insert into t_supplier_apply
+		(id,status,company_name,registered_capital_money,supply_category,cooperation_case,contacts,contacts_phone,e_mail,user_id,create_time,entkbn,create_by)
+		values
+		(replace(uuid(),'-',''),#{status},#{companyName},#{registeredCapitalMoney},#{supplyCategory},#{cooperationCase},#{contacts},#{contactsPhone},#{eMail},#{userId},now(),0,#{createBy})
+	</insert>
+	<!--  修改供应商信息 -->
+	<update id="updateSupplierApply" parameterType="dianfan.entities.our.SupplierApply">
+		update t_supplier_apply set company_name = #{companyName},registered_capital_money=#{registeredCapitalMoney},supply_category=#{supplyCategory},cooperation_case=#{cooperationCase},contacts=#{contacts},contacts_phone=#{contactsPhone},e_mail=#{eMail},update_by=#{updateBy},version=version+1 where user_id=#{userId} and version = #{version}
+	</update>
+	<!--  修改供应商信息 -->
+	<update id="updateSupplierApplyStatus" parameterType="dianfan.entities.our.SupplierApply">
+		update t_supplier_apply set status=#{status},update_by=#{updateBy},
+		<if test="fReason !=null and fReason !=''">f_reason = #{fReason},</if>
+		version=version+1 where id=#{id} and version = #{version}
+	</update>
+	<select id="getSupplierApply" parameterType="string" resultType="int">
+	    select count(*) from t_supplier_apply where user_id = #{userid} and entkbn=0
+	</select>
+	<select id="getSupplierApplyByPhone" parameterType="string" resultType="int">
+	    select count(*) from t_supplier_apply where contacts_phone = #{phonenum} and entkbn=0
+	</select>
+		<update id="updateSupplierApplyRole" parameterType="userRole">
+		update t_user_role set roleid = #{roleid},descption = #{descption} where userid=#{userid}
+	</update>
+	<select id="getUserRole" parameterType="string" resultMap="BaseResultMapRole">
+	select id,role_distinguish,role_name from m_role where  entkbn=0 and role_distinguish = #{roledistinguish}
+	</select>
+	<select id="getUserRole2" parameterType="string" resultMap="BaseResultMapRole">
+	select id,role_distinguish,role_name from m_role where  entkbn=0 and id = #{id}
+	</select>
+	<!--  后台 根据条件获取运营服务商个数 -->
+	<select id="getSupplierNum" parameterType="dianfan.entities.our.SupplierApply" resultType="int">
+	select count(*) from t_supplier_apply where 
+	<if test="status !='' and status !=null"> status = #{status} and </if>
+	<if test="contacts !=''"> 
+	<bind name="_contacts" value="'%' +contacts+'%' " />
+	contacts like #{_contacts} and </if>
+	<if test="companyName !=''"> 
+	<bind name="_companyName" value="'%'+companyName+'%'"/>
+	company_name like #{_companyName} and </if>
+	<!-- <if test="registeredCapitalMoney !=''"> registered_capital_money = #{registeredCapitalMoney} and </if> -->
+	<if test="createTimeStart !='' and createTimeEnd == ''"> create_time &gt; #{createTimeStart} and </if>
+	<if test="createTimeStart !='' and createTimeEnd !=''">  create_time &lt;= #{createTimeEnd} and </if>
+	<if test="createTimeStart !='' and createTimeEnd !=''">  create_time between #{createTimeStart} and #{createTimeEnd} and </if> 
+	 entkbn=0
+	</select>
+	<!--  后台 根据条件获取运营服务商列表 -->
+	<select id="findSupplierList" parameterType="dianfan.entities.our.SupplierApply" resultMap="BaseResultMap">
+	select id,status,f_reason,company_name,registered_capital_money,supply_category,cooperation_case,contacts,contacts_phone,e_mail,user_id,f_reason,user_id,create_time from t_supplier_apply where 
+	<if test="status !='' and status !=null"> status = #{status} and </if>
+	<if test="contacts !=''"> 
+	<bind name="_contacts" value="'%' +contacts+'%' " />
+	contacts like #{_contacts} and </if>
+	<if test="companyName !=''"> 
+	<bind name="_companyName" value="'%'+companyName+'%'"/>
+	company_name like #{_companyName} and </if>
+	<!-- <if test="registeredCapitalMoney !=''"> registered_capital_money = #{registeredCapitalMoney} and </if> -->
+	<if test="createTimeStart !='' and createTimeEnd == ''"> create_time &gt; #{createTimeStart} and </if>
+	<if test="createTimeStart !='' and createTimeEnd !=''">  create_time &lt;= #{createTimeEnd} and </if>
+	<if test="createTimeStart !='' and createTimeEnd !=''">  create_time between #{createTimeStart} and #{createTimeEnd} and </if> 
+	 entkbn=0 order by status desc,create_time desc limit #{start},#{offset}
+	</select>
+</mapper> 

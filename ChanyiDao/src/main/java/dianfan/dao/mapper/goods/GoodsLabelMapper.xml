@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="dianfan.dao.mapper.goods.GoodsLabelMapper">
+	<!-- 商品标签名称重复性检测 -->
+	<select id="checkGoodsLabelName" resultType="boolean">
+		select count(*) from t_goods_labels where 
+		entkbn=0 and label_name=#{labelName}
+		<if test="labelid != null">and id != #{labelid}</if>
+	</select>
+	
+	<!-- 商品标签删除 -->
+	<update id="delGoodsLabel">
+		update t_goods_labels set entkbn=9, version=version+1, update_by=#{userid} where 
+		<foreach collection="labelids" item="item" separator=" or ">id=#{item}</foreach>
+	</update>
+	<!-- 商品标签关系删除 -->
+	<delete id="delGoodsLabelRelation" parameterType="list">
+		delete from t_goods_list_labels where label_id in
+		<foreach collection="array" item="item" open="(" separator="," close=")">#{item}</foreach>
+	</delete>
+</mapper>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

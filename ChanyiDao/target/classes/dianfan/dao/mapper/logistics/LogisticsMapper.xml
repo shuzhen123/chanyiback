@@ -1,0 +1,200 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="dianfan.dao.mapper.logistics.LogisticsMapper">
+	<!-- 统计物流条数 -->
+	<select id="getLogisticsNum" parameterType="dianfan.entities.logistics.LogisticsModel"
+		resultType="Integer">
+		select count(*) from t_delivery dy where 
+		<if test="mId !=null and mId !=''"><bind name="_mId" value="'%'+mId+'%'"/> dy.m_id=#{_mId} and </if>
+		<if test="jdNo !=null and jdNo !=''"> <bind name="_jdNo" value="'%'+jdNo+'%'"/>dy.jd_no like #{_jdNo} and </if>
+		<if test="deliveryNo !=null and deliveryNo !=''"> <bind name="_deliveryNo" value="'%'+deliveryNo+'%'"/>dy.delivery_no like #{_deliveryNo} and </if>
+		<if test="deptNo !=null and deptNo !=''"> <bind name="_deptNo" value="'%'+deptNo+'%'"/> dy.dept_no like #{_deptNo} and </if>
+		<if test="expressNo !=null and expressNo !=''"><bind name="_expressNo" value="'%'+expressNo+'%'"/> dy.express_no like #{_expressNo} and  </if>
+		<if test="senderName !=null and senderName !=''"> <bind name="_senderName" value="'%'+senderName+'%'"/> dy.sender_name like #{_senderName} and  </if>
+		<if test="senderMob !=null and senderMob !=''"><bind name="_senderMob" value="'%'+senderMob+'%'"/> dy.sender_mob like #{_senderMob} and  </if>
+		<if test="senderPhone !=null and senderPhone !=''"><bind name="_senderPhone" value="'%'+senderPhone+'%'"/> dy.sender_phone like #{_senderPhone} and </if>
+		<if test="receiverName !=null and receiverName !=''"><bind name="_receiverName" value="'%'+receiverName+'%'"/> dy.receiver_name like #{_receiverName} and  </if>
+		<if test="receiverPhone !=null and receiverPhone !=''"><bind name="_receiverPhone" value="'%'+receiverPhone+'%'"/> dy.receiver_phone like #{_receiverPhone} and   </if>
+		<if test="receiverMob !=null and receiverMob !=''"><bind name="_receiverMob" value="'%'+receiverMob+'%'"/> dy.receiver_mob like #{_receiverMob} and  </if>
+		<if test="rtnReceiverName !=null and rtnReceiverName !=''"><bind name="_rtnReceiverName" value="'%'+rtnReceiverName+'%'"/> dy.rtn_receiver_name like #{_rtnReceiverName} and   </if>
+		<if test="rtnReceiverMob !=null and rtnReceiverMob !=''"><bind name="_rtnReceiverMob" value="'%'+rtnReceiverMob+'%'"/> dy.rtn_receiver_mob like #{_rtnReceiverMob} and   </if>
+		<if test="rtnReceiverPhone !=null and rtnReceiverPhone !=''"><bind name="_rtnReceiverPhone" value="'%'+rtnReceiverPhone+'%'"/> dy.rtn_receiver_phone like #{_rtnReceiverPhone} and    </if>
+		<if
+			test="createTimeStart !=null and createTimeEnd !=null and createTimeStart !='' and createTimeEnd !=''"> (dy.create_time between #{createTimeStart} and  #{createTimeEnd}) and  </if>
+		dy.entkbn=0
+
+	</select>
+	<!-- 查询物流信息 -->
+	<select id="getLogisticsInfo" parameterType="string"
+		resultType="dianfan.entities.logistics.LogisticsModel">
+		select dy.id,dy.brand_no brandNo,dy.create_time
+		createTime,dy.delivery_no deliveryNo,dy.dept_no deptNo,dy.express_no
+		expressNo,dy.express_time_req expressTimeReq,dy.guarantee_money
+		guaranteeMoney,dy.height,dy.install_flag installFlag,dy.is_cod
+		isCod,dy.is_fragile isFragile,dy.is_guarantee isGuarantee,dy.jd_no
+		jdNo,dy.length,dy.on_door_pick_up onDoorPickUp,dy.m_id
+		mId,dy.package_name packageName,dy.paper_from paperFrom,dy.pickup_date
+		pickupDate,dy.predict_date predictDate,dy.product_sku
+		productSku,dy.receipt_flag receiptFlag,dy.receiveable,dy.receiver_addr
+		receiverAddr,dy.receiver_mob receiverMob,dy.receiver_name
+		receiverName,dy.receiver_phone
+		receiverPhone,dy.remark,dy.rtn_receiver_addr
+		rtnReceiverAddr,dy.rtn_receiver_mob
+		rtnReceiverMob,dy.rtn_receiver_name
+		rtnReceiverName,dy.rtn_receiver_phone rtnReceiverPhone,dy.sender_addr
+		senderAddr,dy.sender_mob senderMob,dy.sender_name
+		senderName,dy.sender_phone senderPhone,dy.send_to
+		sendTo,dy.thrid_category_no thridCategoryNo,dy.weight,dy.width from
+		t_delivery dy inner join t_order_delivery_relate todr on dy.id=todr.delivery_id  where dy.id=#{id}
+	</select>
+	<!-- 查询物流列表信息 -->
+	<select id="findLogisticsList" parameterType="dianfan.entities.logistics.LogisticsModel"
+		resultType="dianfan.entities.logistics.LogisticsModel">
+		select dy.id,dy.brand_no brandNo,dy.create_time
+		createTime,dy.delivery_no deliveryNo,dy.dept_no deptNo,dy.express_no
+		expressNo,dy.express_time_req expressTimeReq,dy.guarantee_money
+		guaranteeMoney,dy.height,dy.install_flag installFlag,dy.is_cod
+		isCod,dy.is_fragile isFragile,dy.is_guarantee isGuarantee,dy.jd_no
+		jdNo,dy.length,dy.on_door_pick_up onDoorPickUp,dy.m_id
+		mId,dy.package_name packageName,dy.paper_from paperFrom,dy.pickup_date
+		pickupDate,dy.predict_date predictDate,dy.product_sku
+		productSku,dy.receipt_flag receiptFlag,dy.receiveable,dy.receiver_addr
+		receiverAddr,dy.receiver_mob receiverMob,dy.receiver_name
+		receiverName,dy.receiver_phone
+		receiverPhone,dy.remark,dy.rtn_receiver_addr
+		rtnReceiverAddr,dy.rtn_receiver_mob
+		rtnReceiverMob,dy.rtn_receiver_name
+		rtnReceiverName,dy.rtn_receiver_phone rtnReceiverPhone,dy.sender_addr
+		senderAddr,dy.sender_mob senderMob,dy.sender_name
+		senderName,dy.sender_phone senderPhone,dy.send_to
+		sendTo,dy.thrid_category_no thridCategoryNo,dy.weight,dy.width,todr.delivery_type deliveryType,todr.delivery_status deliveryStatus from
+		t_delivery dy inner join t_order_delivery_relate todr on dy.id=todr.delivery_id where
+		<if test="mId !=null and mId !=''"><bind name="_mId" value="'%'+mId+'%'"/> dy.m_id=#{_mId} and </if>
+		<if test="jdNo !=null and jdNo !=''"> <bind name="_jdNo" value="'%'+jdNo+'%'"/>dy.jd_no like #{_jdNo} and </if>
+		<if test="deliveryNo !=null and deliveryNo !=''"> <bind name="_deliveryNo" value="'%'+deliveryNo+'%'"/>dy.delivery_no like #{_deliveryNo} and </if>
+		<if test="deptNo !=null and deptNo !=''"> <bind name="_deptNo" value="'%'+deptNo+'%'"/> dy.dept_no like #{_deptNo} and </if>
+		<if test="expressNo !=null and expressNo !=''"><bind name="_expressNo" value="'%'+expressNo+'%'"/> dy.express_no like #{_expressNo} and  </if>
+		<if test="senderName !=null and senderName !=''"> <bind name="_senderName" value="'%'+senderName+'%'"/> dy.sender_name like #{_senderName} and  </if>
+		<if test="senderMob !=null and senderMob !=''"><bind name="_senderMob" value="'%'+senderMob+'%'"/> dy.sender_mob like #{_senderMob} and  </if>
+		<if test="senderPhone !=null and senderPhone !=''"><bind name="_senderPhone" value="'%'+senderPhone+'%'"/> dy.sender_phone like #{_senderPhone} and </if>
+		<if test="receiverName !=null and receiverName !=''"><bind name="_receiverName" value="'%'+receiverName+'%'"/> dy.receiver_name like #{_receiverName} and  </if>
+		<if test="receiverPhone !=null and receiverPhone !=''"><bind name="_receiverPhone" value="'%'+receiverPhone+'%'"/> dy.receiver_phone like #{_receiverPhone} and   </if>
+		<if test="receiverMob !=null and receiverMob !=''"><bind name="_receiverMob" value="'%'+receiverMob+'%'"/> dy.receiver_mob like #{_receiverMob} and  </if>
+		<if test="rtnReceiverName !=null and rtnReceiverName !=''"><bind name="_rtnReceiverName" value="'%'+rtnReceiverName+'%'"/> dy.rtn_receiver_name like #{_rtnReceiverName} and   </if>
+		<if test="rtnReceiverMob !=null and rtnReceiverMob !=''"><bind name="_rtnReceiverMob" value="'%'+rtnReceiverMob+'%'"/> dy.rtn_receiver_mob like #{_rtnReceiverMob} and   </if>
+		<if test="rtnReceiverPhone !=null and rtnReceiverPhone !=''"><bind name="_rtnReceiverPhone" value="'%'+rtnReceiverPhone+'%'"/> dy.rtn_receiver_phone like #{_rtnReceiverPhone} and    </if>
+		<if
+			test="createTimeStart !=null and createTimeEnd !=null and createTimeStart !='' and createTimeEnd !=''"> (dy.create_time between #{createTimeStart} and  #{createTimeEnd}) and  </if>
+		dy.entkbn=0
+		order by dy.create_time desc limit #{start},#{offset}
+	</select>
+	
+	<!-- 添加物流 -->
+	<insert id="addLogistics" parameterType="dianfan.entities.logistics.LogisticsModel">
+		INSERT INTO t_delivery(
+		id,
+		m_id,
+		delivery_no,
+		dept_no,
+		express_no,
+		sender_name,
+		sender_mob,
+		sender_phone,
+		sender_addr,
+		receiver_name,
+		receiver_mob,
+		receiver_phone,
+		receiver_addr,
+		remark,
+		is_fragile,
+		send_to,
+		predict_date,
+		is_cod,
+		receiveable,
+		on_door_pick_up,
+		express_time_req,
+		is_guarantee,
+		jd_no,
+		guarantee_money,
+		receipt_flag,
+		pickup_date,
+		paper_from,
+		rtn_receiver_name,
+		rtn_receiver_mob,
+		rtn_receiver_addr,
+		rtn_receiver_phone,
+		weight,
+		length,
+		width,
+		height,
+		install_flag,
+		thrid_category_no,
+		brand_no,
+		product_sku,
+		package_name,
+		create_time,
+		create_by,
+		entkbn
+		) 
+		VALUES
+		 (
+		#{id},
+		#{mId},
+		#{deliveryNo},
+		#{deptNo},
+		#{expressNo},
+		#{senderName},
+		#{senderMob},
+		#{senderPhone},
+		#{senderAddr},
+		#{receiverName},
+		#{receiverMob},
+		#{receiverPhone},
+		#{receiverAddr},
+		#{remark},
+		#{isFragile},
+		#{sendTo},
+		#{predictDate},
+		#{isCod},
+		#{receiveable},
+		#{onDoorPickUp},
+		#{expressTimeReq},
+		#{isGuarantee},
+		#{jdNo},
+		#{guaranteeMoney},
+		#{receiptFlag},
+		#{pickupDate},
+		#{paperFrom},
+		#{rtnReceiverName},
+		#{rtnReceiverMob},
+		#{rtnReceiverAddr},
+		#{rtnReceiverPhone},
+		#{weight},
+		#{length},
+		#{width},
+		#{height},
+		#{installFlag},
+		#{thridCategoryNo},
+		#{brandNo},
+		#{productSku},
+		#{packageName},now(),#{createBy},0)
+
+	</insert>
+</mapper>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

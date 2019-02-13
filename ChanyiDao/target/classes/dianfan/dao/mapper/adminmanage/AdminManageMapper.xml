@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="dianfan.dao.mapper.adminmanage.AdminManageMapper">
+	
+	<!-- 获取用户的登陆日志 -->
+	<select id="findfindAdminLog" parameterType="list" resultType="dianfan.entities.loginmanage.AdminInfo">
+		SELECT 
+			user_id id, login_datetime loginDatetime, login_ip loginIp, browser  
+		FROM 
+			t_user_login_log 
+		WHERE 
+			user_id in 
+			<foreach collection="list" item="item" open="(" index="index" close=")" separator=",">
+				#{item}
+			</foreach>
+			ORDER BY login_datetime DESC 
+	</select>  
+	
+	<!-- 删除管理员 -->
+	<update id="delAdmin" parameterType="map" >
+		UPDATE t_admin SET entkbn = #{flag} WHERE id in
+		<foreach collection="adminid" index="index" item="item" open="(" separator="," close=")">
+			#{item}
+		</foreach>
+	</update>
+	
+
+
+
+</mapper>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="dianfan.dao.mapper.usersite.UsersiteMapper">
+	
+	<!-- 用户收货地址列表resultMap -->
+	<resultMap id="userAddressList" type="userAddress">
+		<id column="id" property="id"/>
+		<result column="user_id" property="userId"/>
+		<result column="name" property="name"/>
+		<result column="telno" property="telno"/>
+		<result column="area_code" property="areaCode"/>
+		<result column="detail_addr" property="detailAddr"/>
+		<result column="create_time" property="createTime"/>
+		<result column="create_by" property="createBy"/>
+		<result column="update_time" property="updateTime"/>
+		<result column="update_by" property="updateBy"/>
+	</resultMap>
+	
+	<!-- 用户收货地址列表  -->
+	<select id="findUserSiteList" parameterType="string" resultMap="userAddressList">
+		select id, user_id, name, telno, area_code, detail_addr from t_user_address where user_id = #{userid} AND entkbn = 0 ORDER BY create_time DESC
+	</select>
+	
+	
+	
+
+</mapper>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

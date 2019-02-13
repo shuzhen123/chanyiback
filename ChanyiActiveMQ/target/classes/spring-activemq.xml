@@ -1,0 +1,55 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:context="http://www.springframework.org/schema/context"
+	xmlns:amq="http://activemq.apache.org/schema/core"
+	xsi:schemaLocation="
+        http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans.xsd
+        http://www.springframework.org/schema/context http://www.springframework.org/schema/context/spring-context.xsd
+        http://activemq.apache.org/schema/core http://activemq.apache.org/schema/core/activemq-core-5.15.4.xsd">
+	
+	<!-- amq 连接配置 -->
+	<amq:connectionFactory id="amqConnectionFactory" brokerURL="${mq.brokerURL}" userName="${mq.userName}" password="${mq.password}" trustAllPackages="true" />
+
+	<!-- 配置JMS连接工厂  -->
+	<bean id="connectionFactory" class="org.springframework.jms.connection.CachingConnectionFactory">
+		<constructor-arg ref="amqConnectionFactory" />
+		<!-- 缓存会话数量的最大限制 -->
+		<property name="sessionCacheSize" value="${mq.sessionCacheSize}" />
+	</bean>
+
+	<!-- 定义消息队列（Queue） -->
+	<bean id="queueDestination" class="org.apache.activemq.command.ActiveMQQueue">
+		<constructor-arg index="0" value="${mq.queueName}" />
+	</bean>
+
+	<!-- 配置JMS模板（Queue），Spring提供的JMS工具类，它发送、接收消息。 -->
+	<bean id="jmsTemplate" class="org.springframework.jms.core.JmsTemplate">
+		<property name="connectionFactory" ref="connectionFactory" />
+		<property name="defaultDestination" ref="queueDestination" />
+		<property name="receiveTimeout" value="10000" />
+		<!-- true是topic，false是queue，默认是false，此处显示写出false -->
+		<property name="pubSubDomain" value="false" />
+	</bean>
+	
+	<!-- 配置消息队列监听者（Queue） -->
+    <bean id="queueMessageListener" class="dianfan.service.QueueMessageListener" />
+    
+    <!-- 显示注入消息监听容器（Queue），配置连接工厂，监听的目标是orderQueueDestination，监听器是上面定义的监听器 -->
+    <bean id="queueListenerContainer"
+        class="org.springframework.jms.listener.DefaultMessageListenerContainer">
+        <property name="connectionFactory" ref="connectionFactory" />
+        <property name="destination" ref="queueDestination" />
+        <property name="messageListener" ref="queueMessageListener"  />
+    </bean>
+
+</beans>
+
+
+
+
+
+
+
+
+
+

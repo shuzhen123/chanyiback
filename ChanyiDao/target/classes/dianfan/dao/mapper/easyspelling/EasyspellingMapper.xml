@@ -1,0 +1,216 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="dianfan.dao.mapper.easyspelling.EasyspellingMapper">
+	
+	<!-- 易拼resultMap -->
+	<resultMap id="easySpellingParameterMap" type="dianfan.entities.easyspelling.EasySpellingParameter">
+		<id column="id" property="id"/>
+		<result column="goods_id" property="goodsId"/>
+		<result column="limit_num" property="limitNum"/>
+		<result column="start_time" property="startTime"/>
+		<result column="end_time" property="endTime"/>
+		<result column="create_by" property="createBy"/>
+		<result column="create_time" property="createTime"/>
+		<result column="update_by" property="updateBy"/>
+		<result column="update_time" property="updateTime"/>
+		<result column="entkbn" property="entkbn"/>
+		<result column="version" property="version"/>
+	</resultMap>
+	
+	<!-- 易拼(发起)resultMap -->
+	<resultMap id="easySpellingMap" type="dianfan.entities.easyspelling.EasySpelling">
+		<id column="id" property="id"/>
+		<result column="user_id" property="userId"/>
+		<result column="easy_spelling_parameter_id" property="easySpellingParameterId"/>
+		<result column="start_time" property="startTime"/>
+		<result column="end_time" property="endTime"/>
+		<result column="create_by" property="createBy"/>
+		<result column="create_time" property="createTime"/>
+		<result column="update_by" property="updateBy"/>
+		<result column="update_time" property="updateTime"/>
+		<result column="entkbn" property="entkbn"/>
+		<result column="version" property="version"/>
+	</resultMap>
+	
+	<!-- 用户resultMap -->
+	<resultMap id="userInfoMap" type="dianfan.entities.UserInfo">
+		<id column="id" property="id"/>
+		<result column="union_id" property="unionId"/>
+		<result column="wxpub_openid" property="wxpubOpenid"/>
+		<result column="wxsmall_openid" property="wxsmallOpenid"/>
+		<result column="nick_name" property="nickName"/>
+		<result column="sex" property="sex"/>
+		<result column="avatar_url" property="avatarUrl"/>
+		<result column="telno" property="telno"/>
+		<result column="area_code" property="areaCode"/>
+		<result column="bank_card_no" property="bankCardNo"/>
+		<result column="bank_card_name" property="bankCardName"/>
+		<result column="bank_short" property="bankShort"/>
+		<result column="locked" property="locked"/>
+		<result column="pwd" property="pwd"/>
+		<result column="qr_num" property="qrNum"/>
+		<result column="extra_id" property="extraId"/>
+		<result column="create_time" property="createTime"/>
+		<result column="create_by" property="createBy"/>
+		<result column="update_time" property="updateTime"/>
+		<result column="update_by" property="updateBy"/>
+	</resultMap>
+	
+	
+	<!-- 查询成团列表信息 -->
+	<select id="getEasySpellingList" parameterType="map" resultType="dianfan.entities.easyspelling.EasySpellingModel">
+		SELECT DISTINCT 
+			es.id AS esId, 
+			es.user_id AS userId, 
+			es.end_time AS endTime, 
+			uu.nick_name AS nickName,  
+			uu.avatar_url AS avatarUrl, 
+			(esp.limit_num - ccc.count) AS surplusCount 
+		FROM 
+			t_easy_spelling es 
+		INNER JOIN t_easy_spelling_parameter esp ON es.easy_spelling_parameter_id = esp.id 
+		INNER JOIN t_easy_spelling_user_relate esur ON esur.easy_spelling_id = es.id 
+		INNER JOIN t_trade_ser ts ON ts.order_status = '01' 
+		INNER JOIN t_order ord ON ord.order_id = ts.order_id 
+		INNER JOIN t_user_userinfo uu ON esur.user_id = uu.id 
+		AND ord.user_id = uu.id 
+		AND es.user_id = uu.id 
+		AND es.id = ord.easy_spelling_id 
+		INNER JOIN ( 
+			SELECT 
+				easy_spelling_id, 
+				user_id, 
+				count(user_id) count 
+			FROM 
+				t_easy_spelling_user_relate esur2 
+			INNER JOIN ( 
+				SELECT 
+					es.id id 
+				FROM 
+					t_easy_spelling_parameter esp, 
+					t_easy_spelling es 
+				WHERE 
+					esp.id = es.easy_spelling_parameter_id 
+				AND esp.goods_id = #{goodsId} 
+				AND esp.end_time > now() 
+				AND esp.entkbn = 0 
+			) ees ON ees.id = esur2.easy_spelling_id 
+			AND entkbn = 0 
+			GROUP BY 
+				easy_spelling_id 
+		) ccc ON ccc.easy_spelling_id = ord.easy_spelling_id and esp.limit_num > ccc.count
+		WHERE 
+			esp.goods_id = #{goodsId} 
+		AND es.end_time > now() 
+		AND esp.entkbn = 0 
+		LIMIT #{start},#{count} 
+	</select>
+	
+	<!-- 查询易拼成团人员数量 -->
+	<select id="getEasySpellingListPeopleCount" parameterType="string" resultType="Integer">
+		SELECT
+			COUNT(*)
+		FROM
+			t_easy_spelling es
+		INNER JOIN t_easy_spelling_parameter esp ON es.easy_spelling_parameter_id = esp.id
+		INNER JOIN t_easy_spelling_user_relate esur ON esur.easy_spelling_id = es.id
+		INNER JOIN t_trade_ser ts ON ts.order_status = '01' 
+		INNER JOIN t_order ord ON ord.order_id = ts.order_id
+		INNER JOIN t_user_userinfo uu ON esur.user_id = uu.id
+		AND ord.user_id = uu.id
+		AND es.user_id = uu.id
+		AND es.id = ord.easy_spelling_id
+		INNER JOIN (
+			SELECT
+				easy_spelling_id,
+				user_id,
+				count(user_id) count
+			FROM
+				t_easy_spelling_user_relate esur2
+			INNER JOIN (
+				SELECT
+					es.id id
+				FROM
+					t_easy_spelling_parameter esp,
+					t_easy_spelling es
+				WHERE
+					esp.id = es.easy_spelling_parameter_id
+				AND esp.goods_id = #{goodsId}
+				AND esp.end_time > now()
+				AND esp.entkbn = 0
+			) ees ON ees.id = esur2.easy_spelling_id 
+			AND entkbn = 0
+			GROUP BY
+				easy_spelling_id
+		) ccc ON ccc.easy_spelling_id = ord.easy_spelling_id and esp.limit_num > ccc.count
+		WHERE
+			esp.goods_id = #{goodsId}
+		AND es.end_time > now()
+		AND esp.entkbn = 0
+	</select>
+	
+	<!-- 根据goodsId获取易拼条数 -->
+	<select id="getEasySpellingListCount" parameterType="string" resultType="Integer">
+		SELECT 
+			count(*) 
+		FROM 
+			t_easy_spelling es 
+		INNER JOIN t_easy_spelling_parameter esp ON es.easy_spelling_parameter_id = esp.id 
+		INNER JOIN t_easy_spelling_user_relate esur ON esur.easy_spelling_id = es.id 
+		INNER JOIN t_trade_ser ts ON ts.order_status = '01' 
+		INNER JOIN t_order ord ON ord.order_id = ts.order_id 
+		INNER JOIN t_user_userinfo uu ON esur.user_id = uu.id 
+		AND ord.user_id = uu.id 
+		AND es.user_id = uu.id 
+		AND es.id = ord.easy_spelling_id 
+		INNER JOIN ( 
+			SELECT 
+				easy_spelling_id, 
+				user_id, 
+				count(user_id) count 
+			FROM 
+				t_easy_spelling_user_relate esur2 
+			INNER JOIN ( 
+				SELECT 
+					es.id id 
+				FROM 
+					t_easy_spelling_parameter esp, 
+					t_easy_spelling es 
+				WHERE 
+					esp.id = es.easy_spelling_parameter_id 
+				AND esp.goods_id = #{goodsId} 
+				AND esp.end_time > now() 
+				AND esp.entkbn = 0 
+			) ees ON ees.id = esur2.easy_spelling_id 
+			AND entkbn = 0 
+			GROUP BY 
+				easy_spelling_id 
+		) ccc ON ccc.easy_spelling_id = ord.easy_spelling_id and esp.limit_num > ccc.count
+		WHERE 
+			esp.goods_id = #{goodsId} 
+		AND es.end_time > now() 
+		AND esp.entkbn = 0 
+	</select>
+	<!-- 获取易拼参数 -->
+	<select id="getEasySpellingParameter" parameterType="string" resultMap="easySpellingParameterMap">
+		select id,goods_id,limit_num,start_time,end_time from t_easy_spelling_parameter esp 
+		where esp.goods_id=#{goodsid} and esp.entkbn = 0
+	</select>
+</mapper>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

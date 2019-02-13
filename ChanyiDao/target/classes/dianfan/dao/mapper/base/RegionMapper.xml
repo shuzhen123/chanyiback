@@ -1,0 +1,57 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="dianfan.dao.mapper.base.RegionMapper">
+
+	<!-- 获取大区列表map -->
+	<resultMap type="dianfan.entities.base.Regionss" id="regionsmap">
+		<id column="id" property="id"/>
+		<result column="name" property="name"/>
+		<!-- 大区下面的区域 都是省  就是sup_area_code == null的 -->
+		<collection property="area" ofType="dianfan.entities.base.Area">
+			<id column="area_code" property="areaCode"/>
+			<result column="area_name" property="areaName"/>
+			<result column="region_id" property="regionId"/>
+		</collection>
+	</resultMap>
+	<!-- 获取大区列表 -->
+	<select id="findRegionList" resultMap="regionsmap">
+		SELECT
+			mrn.id id,
+			mrn.`name` name,
+			mac.area_code area_code,
+			mac.area_name area_name
+		FROM
+			m_region_name mrn
+		LEFT JOIN m_area_code mac ON mrn.id = mac.region_id
+		WHERE
+			mrn.entkbn = 0 
+		AND ISNULL(mac.sup_area_code)
+		ORDER BY mrn.id , mac.area_code
+	</select>
+	
+	<!-- 修改大区和省的关系 -->
+	<update id="updataRegion" parameterType="map">
+		UPDATE m_area_code SET region_id = #{regionid} WHERE area_code in
+		<foreach collection="list" index="index" item="item" open="(" separator="," close=")">
+			#{item}
+		</foreach>
+	</update>
+	
+</mapper>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

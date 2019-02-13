@@ -1,0 +1,126 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="dianfan.dao.mapper.content.ArticleMapper">
+	
+	<!-- 更新分类状态 -->
+	<update id="updataEditClassifyType" parameterType="map" >
+		UPDATE 
+			t_advertorial_classify 
+		SET 
+			entkbn = #{type} ,update_time = NOW() , update_by = #{userid}  
+		WHERE 
+			classify_id in 
+			<foreach collection="list" index="index" item="item" open="(" close=")" separator=",">
+				#{item}
+			</foreach>
+	
+	</update>
+	
+	<!-- 获取文章列表数量 -->
+	<select id="findAticleListCount" parameterType="map" resultType="int">
+		SELECT 
+			COUNT(*)
+		FROM 
+		t_advertorial adv LEFT JOIN
+		(SELECT classify_id, classify_name FROM t_advertorial_classify WHERE entkbn != 9) class  ON adv.classify_id = class.classify_id 
+		WHERE 
+		adv.entkbn != 9
+			<if test=' typeid != null and typeid != "" '>
+				and adv.classify_id = #{typeid}
+			</if>
+			<if test=' title != null and title != "" '>
+				<bind name="title_" value=" '%' + title + '%' "/>
+				and adv.title like #{title_}
+			</if>
+			<if test=' starttime != null and starttime != "" and endtime != null and endtime != "" '>
+				<bind name="_starttime" value="starttime + ' 00:00:00' " />
+				<bind name="endtime_" value="endtime + ' 23:59:59' " />
+				and adv.create_time between #{_starttime} and #{endtime_} 
+			</if>
+	</select>
+	
+	
+	<!-- 获取文章列表 -->
+	<select id="findAticleList" parameterType="map" resultType="Advertorial">
+		SELECT 
+			adv.id id, IFNULL(class.classify_name,'暂无分类') classifyName,adv.classify_id classifyId, adv.title, adv.content, adv.visit_counts visitCounts, adv.entkbn,
+			adv.pic_addr picAddr, adv.thumb_up_num thumbUpNum, adv.sort ,adv.create_time createTime , thumb_up_num_n thumbUpNumN 
+		FROM 
+		t_advertorial adv LEFT JOIN
+		(SELECT classify_id, classify_name FROM t_advertorial_classify WHERE entkbn != 9) class  ON adv.classify_id = class.classify_id 
+		WHERE 
+		adv.entkbn != 9
+			<if test=' typeid != null and typeid != "" '>
+				and adv.classify_id = #{typeid}
+			</if>
+			<if test=' title != null and title != "" '>
+				<bind name="title_" value=" '%' + title + '%' "/>
+				and adv.title like #{title_}
+			</if>
+			<if test=' starttime != null and starttime != "" and endtime != null and endtime != "" '>
+				<bind name="_starttime" value="starttime + ' 00:00:00' " />
+				<bind name="endtime_" value="endtime + ' 23:59:59' " />
+				and adv.create_time between #{_starttime} and #{endtime_} 
+			</if>
+		<if test=' desc == 0 '>
+			ORDER BY adv.sort
+		</if>
+		<if test=' desc != 0 '>
+			ORDER BY adv.sort DESC
+		</if>
+		LIMIT #{start},#{length} 
+	</select>
+	
+	
+	<!-- 修改文章的状态 -->
+	<update id="delAticle" parameterType="map">
+		UPDATE t_advertorial SET entkbn = #{type} , update_by = #{userid} , update_time = NOW() WHERE id in
+		<foreach collection="lids" index="index" item="item" open="(" separator="," close=")">
+			#{item}
+		</foreach>
+	</update>
+	
+	<!--  获取文章分类列表 -->
+	<select id="findClassifyList" parameterType="string" resultType="AdvertorialClassifyModels">
+		SELECT
+			class.classify_id classifyId,
+			class.classify_name classifyName,
+			class.classify_nav_sort classifyNavSort,
+			class.classify_parent_id classifyParentId,
+			class.pic_addr picAddr,
+			class.create_time createTime,
+			class.create_by createBy,
+			class.entkbn,
+			admin.account account
+		FROM
+			t_advertorial_classify class
+		LEFT JOIN t_admin admin ON class.create_by = admin.id
+		WHERE
+			class.entkbn != 9
+		<if test=' _parameter == 0 '>
+			ORDER BY class.classify_nav_sort
+		</if>
+		<if test=' _parameter != 0 '>
+			ORDER BY class.classify_nav_sort DESC
+		</if>
+	</select>
+	
+	
+</mapper>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

@@ -1,0 +1,68 @@
+<?xml version="1.0" encoding="UTF-8"?>    
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"    
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="dianfan.dao.mapper.order.OrderCommissionMapper">
+
+	<resultMap id="userBindRealtionMap" type="userBindRealtion">
+		<id column="id" property="userid"/>
+		<result column="salerid" property="salerid"/>
+		<result column="consumerid" property="consumerid"/>
+		<result column="storeid" property="storeid"/>
+		<result column="role_distinguish" property="roleDistinguish"/>
+		<result column="area_code" property="areaCode"/>
+	</resultMap>
+	<!-- 根据订单id获取对应的用户id及绑定的消费关系 -->
+	<select id="getUserConsumeRelation" parameterType="string" resultMap="userBindRealtionMap">
+		select 
+			ui.id, saler.id salerid, consumer.id consumerid, store.id storeid, role.role_distinguish, odr.area_code
+		from 
+			t_user_role ur, m_role role, 
+			(
+				select 
+					o.user_id, addr.area_code 
+				from 
+					t_order o, t_user_address addr 
+				where 
+					o.address_id=addr.id and o.order_id=#{orderid}
+			)odr,
+			t_user_userinfo ui
+			left join t_user_userinfo saler on ui.saler_qr_num=saler.qr_num
+			left join t_user_userinfo consumer on ui.consumer_qr_num=consumer.qr_num
+			left join t_user_userinfo store on ui.experiencestore_qr_num=store.qr_num
+		where 
+			ui.id=ur.userid and ur.roleid=role.id and
+			ui.id = odr.user_id
+	</select>
+	
+	<!-- 插入佣金数据 -->
+	<insert id="addCommission">
+		insert into t_user_bouns_detail (id,user_id,order_no,bouns_percent,bouns_fee,bouns_from,user_bouns_status,create_time,c_last_money) values 
+		<foreach item="item" collection="list" separator="," >  
+			(replace(uuid(),'-',''), #{item.userId}, #{item.orderNo}, #{item.bounsPercent}, #{item.bounsFee}, '02', '04', now(), #{item.cLastMoney})
+		</foreach>
+	</insert>
+	
+	<!-- 获取用户剩余提现金额 -->
+	<select id="findUserLastMoney" parameterType="list" resultType="userLastMoney">
+		select 
+			id userid, last_money lastMoney
+		from 
+			t_user_userinfo
+		where 
+			id in 
+			<foreach item="item" collection="list" open="(" separator="," close=")">#{item}</foreach>
+	</select>
+	
+	<!-- 更新余额 -->
+	<update id="updateUserLastMoney" parameterType="list">
+		update t_user_userinfo set last_money = 
+	        <foreach collection="list" item="item" index="index" separator=" " open="case" close="end">
+		        when id=#{item.userid} then #{item.lastMoney}
+		    </foreach>
+        where id in
+	        <foreach collection="list" item="item" separator="," open="(" close=")">
+	            #{item.userid}
+	        </foreach>
+	</update>
+	
+</mapper> 

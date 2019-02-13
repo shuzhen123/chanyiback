@@ -1,0 +1,90 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="dianfan.dao.mapper.adminlogin.AdminloginMapper">
+	
+	<!--  获取业务日志列表数量 -->
+	<select id="findOperateLogCount" parameterType="map" resultType="int">
+		SELECT
+			count(*)
+		FROM
+			t_operate_log tog
+		LEFT JOIN t_admin_role arole ON arole.adminid = tog.user_id
+		LEFT JOIN t_role role ON role.id = arole.roleid
+		LEFT JOIN t_popedom low ON low.popedomid = tog.popedom_id
+		LEFT JOIN t_popedom up ON low.popedomfatherid = up.popedomid
+		LEFT JOIN t_admin ad ON ad.id = tog.user_id
+		where
+			ad.entkbn != 9
+		<!-- 通过角色搜索 -->
+		<if test='role != null and role != "" '>
+			and tog.role_id = #{role}
+		</if>
+		<if test=' name != null and name != ""  ' >
+			<bind name="name_" value=" '%' + name + '%'  "/>
+			and ad.account like #{name_}
+		</if>
+		<if test=' starttime != null and starttime != "" and endtime != null and endtime != "" '>
+			<bind name="_starttime" value="starttime + ' 00:00:00' " />
+			<bind name="endtime_" value="endtime + ' 23:59:59' " />
+			and tog.time between #{_starttime} and #{endtime_} 
+		</if>
+	</select>
+	
+	
+	<!--  获取业务日志列表 -->
+	<select id="findOperateLogList" parameterType="map" resultType="dianfan.entities.loginmanage.OperateLogs">
+		SELECT
+			tog.id id,
+			tog.user_id userId,
+			tog.popedom_id popedomId,
+			tog.role_id roleId,
+			tog.operate operate,
+			tog.time time,
+			tog.ip ip,
+			role.role_name rolename,
+			ad.account account,
+			CONCAT(IF(up.popedomname is null,'', concat(up.popedomname,',')),low.popedomname) popedomname 
+		FROM
+			t_operate_log tog
+		LEFT JOIN t_admin_role arole ON arole.adminid = tog.user_id
+		LEFT JOIN t_role role ON role.id = arole.roleid
+		LEFT JOIN t_popedom low ON low.popedomid = tog.popedom_id
+		LEFT JOIN t_popedom up ON low.popedomfatherid = up.popedomid
+		LEFT JOIN t_admin ad ON ad.id = tog.user_id
+		where
+			ad.entkbn != 9
+		<!-- 通过角色搜索 -->
+		<if test='role != null and role != "" '>
+			and tog.role_id = #{role}
+		</if>
+		<if test=' name != null and name != ""  ' >
+			<bind name="name_" value=" '%' + name + '%'  "/>
+			and ad.account like #{name_}
+		</if>
+		<if test=' starttime != null and starttime != "" and endtime != null and endtime != "" '>
+			and tog.time between #{starttime} and #{endtime} 
+		</if>
+		ORDER BY tog.time desc
+		LIMIT #{start},#{length}
+	</select>
+	
+	
+ 
+</mapper>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

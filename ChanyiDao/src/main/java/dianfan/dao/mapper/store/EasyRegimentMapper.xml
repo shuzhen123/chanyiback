@@ -1,0 +1,504 @@
+<?xml version="1.0" encoding="UTF-8"?>    
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"    
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="dianfan.dao.mapper.store.EasyRegimentMapper">
+
+	<!-- 获取体验店列表数量 -->
+	<select id="findEasyRegimentStoreCount" parameterType="eSSearchParam" resultType="int">
+		select
+			count(*)
+		from
+			t_experiencestore_apply store
+			<if test="goodsClassifyId != null and goodsClassifyId != ''">
+				<!-- 商品分类 -->
+				, t_experiencestore_apply_classify store_c,
+				t_goods_classify g_class
+			</if>
+		where
+			<if test="goodsClassifyId != null and goodsClassifyId != ''">
+				<!-- 商品分类 -->
+				store.id=store_c.experiencestore_apply_id and store_c.goods_classify_id=g_class.id and
+				g_class.id=#{goodsClassifyId} and 
+			</if>
+			<if test="sInput != null and sInput != ''">
+				<!-- 使用店名或地点搜索门店 -->
+				<bind name="sInput_p" value="'%' + sInput + '%'"/>
+				(store.apply_name like #{sInput_p} or store.apply_addr like #{sInput_p}) and 
+			</if>
+			<choose>
+				<when test="areaCode != null and areaCode != ''">
+					<!-- 使用区县code筛选 -->
+					store.city_code=#{areaCode} and
+				</when>
+				<otherwise>
+					<!-- 搜索全市门店 -->
+					store.city_code in 
+					<foreach collection="allAreaCode" item="item" separator="," open="(" close=")">
+						#{item}
+					</foreach>
+					and
+				</otherwise>
+			</choose>
+			<if test="open == 1">
+				<!-- 是否营业中 -->
+				(
+					store.business_weekly_start &lt;= weekday(now()) + 1 and 
+					weekday(now()) + 1 &lt;= store.business_weekly_end and 
+				 	store.business_time_start &lt;= date_format(now(), '%H:%i:%S') and 
+				 	date_format(now(), '%H:%i:%S') &lt;= store.business_time_end
+				 ) 
+				 and
+			</if>
+			store.status='01' and store.entkbn=0
+	</select>
+	
+	<resultMap type="experienceStore" id="storeMap">
+		<id column="id" property="storeid"/>
+		<result column="apply_name" property="storeName"/>
+		<result column="doorhead_url" property="storePic"/>
+		<result column="business_time_start" property="openTime"/>
+		<result column="business_time_end" property="closeTime"/>
+		<result column="apply_addr" property="addr"/>
+		<result column="longitude" property="longitude"/>
+		<result column="latitude" property="latitude"/>
+		<result column="distance" property="distance"/>
+	</resultMap>
+	<!-- 获取体验店列表 -->
+	<select id="findEasyRegimentStore" parameterType="eSSearchParam" resultMap="storeMap">
+		select
+			*
+		from
+		(
+			select
+				store.id, store.apply_name, store.doorhead_url, store.business_time_start, 
+				store.business_time_end, store.apply_addr, store.longitude, store.latitude,
+				<!-- 距离计算 -->
+				ROUND(
+				6378.138 * 2 * ASIN(SQRT(
+							POW(SIN((#{latitude} * PI() / 180 - store.latitude * PI() / 180) / 2), 2) + 
+							COS(#{latitude} * PI() / 180) * 
+							COS(latitude * PI() / 180) * 
+							POW(SIN((#{longitude} * PI() / 180 - store.longitude * PI() / 180) / 2),2)
+						)
+					) * 1000
+				) distance
+			from
+				t_experiencestore_apply store
+				<if test="goodsClassifyId != null and goodsClassifyId != ''">
+					<!-- 商品分类 -->
+					, t_experiencestore_apply_classify store_c,
+					t_goods_classify g_class
+				</if>
+			where
+				<if test="goodsClassifyId != null and goodsClassifyId != ''">
+					<!-- 商品分类 -->
+					store.id=store_c.experiencestore_apply_id and store_c.goods_classify_id=g_class.id and
+					g_class.id=#{goodsClassifyId} and 
+				</if>
+				<if test="sInput != null and sInput != ''">
+					<!-- 使用店名或地点搜索门店 -->
+					<bind name="sInput_p" value="'%' + sInput + '%'"/>
+					(store.apply_name like #{sInput_p} or store.apply_addr like #{sInput_p}) and 
+				</if>
+				<choose>
+					<when test="areaCode != null and areaCode != ''">
+						<!-- 使用区县code筛选 -->
+						store.city_code=#{areaCode} and
+					</when>
+					<otherwise>
+						<!-- 搜索全市门店 -->
+						store.city_code in 
+						<foreach collection="allAreaCode" item="item" separator="," open="(" close=")">
+							#{item}
+						</foreach>
+						and
+					</otherwise>
+				</choose>
+				<if test="open == 1">
+					<!-- 是否营业中 -->
+					(
+						store.business_weekly_start &lt;= weekday(now()) + 1 and 
+						weekday(now()) + 1 &lt;= store.business_weekly_end and 
+					 	store.business_time_start &lt;= date_format(now(), '%H:%i:%S') and 
+					 	date_format(now(), '%H:%i:%S') &lt;= store.business_time_end
+					 ) 
+					 and
+				</if>
+				store.status='01' and store.entkbn=0
+				<if test="mapShow != 1">
+					<!-- 按地图展示,不需要分页 -->
+					limit #{pagestart}, #{pagesize}
+				</if>
+		) store
+		<if test="distanceSort == 1">
+			order by distance
+		</if>
+	</select>
+	
+	<!-- 根据筛选条件获取体验店数量 -->
+	<select id="getStoreCount" resultType="int">
+		select 
+			count(*)
+		from 
+			t_experiencestore_apply store
+		where 
+			store.entkbn != 9
+			<if test='store.applyName != null'>
+				<!-- 体验店名称 -->
+				<bind name="_applyName_" value="'%' + store.applyName + '%'"/>
+				and store.apply_name like #{_applyName_}
+			</if>
+			<if test='store.applPhoneNum != null'>
+				<!-- 手机号 -->
+				<bind name="applPhoneNum_" value="store.applPhoneNum + '%'"/>
+				and store.apply_phone_num like #{applPhoneNum_}
+			</if>
+			<if test='store.status != null'>
+				<!-- 申请状态 01通过 02-未通过03待审核 -->
+				and store.status=#{store.status}
+			</if>
+			<if test='cityCodes != null and cityCodes.size() > 0'>
+				<!-- 城市code(可为省、市、区县code) -->
+				and 
+				<foreach collection="cityCodes" item="item" open="(" separator=" or " close=")">
+					store.city_code=#{item}
+				</foreach>
+			</if>
+			<if test='store.businessWeeklyStart != null'>
+				<!-- 营业日起始 -->
+				and store.business_weekly_start &lt;= #{store.businessWeeklyStart}
+			</if>
+			<if test='store.businessWeeklyEnd != null'>
+				<!-- 营业日结束 -->
+				and store.business_weekly_end &gt;= #{store.businessWeeklyEnd}
+			</if>
+			<if test='store.businessTimeStart != null'>
+				<!-- 营业开始时间 -->
+				and store.business_time_start &lt;= #{store.businessTimeStart}
+			</if>
+			<if test='store.businessTimeEnd != null'>
+				<!-- 营业结束时间 -->
+				and store.business_time_end &gt;= #{store.businessTimeEnd}
+			</if>
+	</select>
+	
+	<resultMap type="store" id="storeListMap">
+		<id column="id" property="id"/>
+		<result column="apply_name" property="applyName"/>
+		<result column="city_code" property="cityCode"/>
+		<result column="apply_phone_num" property="applPhoneNum"/>
+		<result column="apply_addr" property="applyAddr"/>
+		<result column="status" property="status"/>
+		<result column="area" property="area"/>
+		<result column="doorhead_url" property="doorheadUrl"/>
+		<result column="business_weekly_start" property="businessWeeklyStart"/>
+		<result column="business_weekly_end" property="businessWeeklyEnd"/>
+		<result column="business_time_end" property="businessTimeEnd"/>
+		<result column="business_time_start" property="businessTimeStart"/>
+		<result column="apply_user_id" property="applyUserid"/>
+		<result column="nick_name" property="applyUserName"/>
+		<result column="create_time" property="createTime"/>
+		<result column="entkbn" property="entkbn"/>
+		<result column="longitude" property="longitude"/>
+		<result column="latitude" property="latitude"/>
+	</resultMap>
+	<!-- 根据筛选条件获取体验店列表 -->
+	<select id="getStoreList" resultMap="storeListMap">
+		select 
+			store.id, store.apply_name, store.city_code, store.apply_phone_num, store.apply_addr, store.status, store.area, 
+			store.doorhead_url, store.business_weekly_start, store.business_weekly_end, store.business_time_end, 
+			store.business_time_start, store.apply_user_id, store.create_time, store.entkbn, store.longitude, store.latitude,
+			user.nick_name 
+		from 
+			t_experiencestore_apply store,
+			t_user_userinfo user
+		where 
+			store.apply_user_id=user.id and store.entkbn != 9
+			<if test='store.applyName != null'>
+				<!-- 体验店名称 -->
+				<bind name="_applyName_" value="'%' + store.applyName + '%'"/>
+				and store.apply_name like #{_applyName_}
+			</if>
+			<if test='store.applPhoneNum != null'>
+				<!-- 手机号 -->
+				<bind name="applPhoneNum_" value="'%' + store.applPhoneNum + '%'"/>
+				and store.apply_phone_num like #{applPhoneNum_}
+			</if>
+			<if test='store.status != null'>
+				<!-- 申请状态 01通过 02-未通过03待审核 -->
+				and store.status=#{store.status}
+			</if>
+			<if test='cityCodes != null and cityCodes.size() > 0'>
+				<!-- 城市code(可为省、市、区县code) -->
+				and 
+				<foreach collection="cityCodes" item="item" open="(" separator=" or " close=")">
+					store.city_code=#{item}
+				</foreach>
+			</if>
+			<if test='store.businessWeeklyStart != null'>
+				<!-- 营业日起始 -->
+				and store.business_weekly_start &lt;= #{store.businessWeeklyStart}
+			</if>
+			<if test='store.businessWeeklyEnd != null'>
+				<!-- 营业日结束 -->
+				and store.business_weekly_end &gt;= #{store.businessWeeklyEnd}
+			</if>
+			<if test='store.businessTimeStart != null'>
+				<!-- 营业开始时间 -->
+				and store.business_time_start &lt;= #{store.businessTimeStart}
+			</if>
+			<if test='store.businessTimeEnd != null'>
+				<!-- 营业结束时间 -->
+				and store.business_time_end &gt;= #{store.businessTimeEnd}
+			</if>
+			order by store.create_time desc
+			limit #{pageStart}, #{pageSize}
+	</select>
+	
+	<resultMap type="store" id="storeDetailMap">
+		<id column="id" property="id"/>
+		<result column="apply_name" property="applyName"/>
+		<result column="city_code" property="cityCode"/>
+		<result column="apply_phone_num" property="applPhoneNum"/>
+		<result column="apply_addr" property="applyAddr"/>
+		<result column="status" property="status"/>
+		<result column="f_reason" property="fReason"/>
+		<result column="longitude" property="longitude"/>
+		<result column="latitude" property="latitude"/>
+		<result column="area" property="area"/>
+		<result column="doorhead_url" property="doorheadUrl"/>
+		<result column="inner_url00" property="innerUrl00"/>
+		<result column="inner_url01" property="innerUrl01"/>
+		<result column="business_licence_url" property="businessLicenceUrl"/>
+		<result column="business_weekly_start" property="businessWeeklyStart"/>
+		<result column="business_weekly_end" property="businessWeeklyEnd"/>
+		<result column="business_time_end" property="businessTimeEnd"/>
+		<result column="business_time_start" property="businessTimeStart"/>
+		<result column="handle_idcard" property="handleIdcard"/>
+		
+		<result column="apply_user_id" property="applyUserid"/>
+		<result column="applyerName" property="applyUserName"/>
+		
+		<result column="create_time" property="createTime"/>
+		<result column="create_by" property="createBy"/>
+		<result column="createrName" property="createName"/>
+		
+		<result column="update_by" property="createBy"/>
+		<result column="entkbn" property="entkbn"/>
+		<result column="apply_current_business" property="applyCurrentBusiness"/>
+	</resultMap>
+	<!-- 体验店详情 -->
+	<select id="getStoreDetail" parameterType="string" resultMap="storeDetailMap">
+		select 
+			store.*, applyer.nick_name applyerName, creater.nick_name createrName, updater.nick_name updaterName
+		from 
+			t_experiencestore_apply store
+			left join t_user_userinfo updater on store.update_by = updater.id
+			left join t_user_userinfo creater on store.create_by = creater.id,
+			t_user_userinfo applyer 
+		where
+			store.apply_user_id = applyer.id and
+			store.id=#{storeid}
+	</select>
+	
+	<!-- 获取体验店的分类 -->
+	<select id="findStoreClassify" parameterType="string" resultType="goodsClassify">
+		select 
+			classify.id, concat(pc.classify_name,' - ',classify.classify_name) classifyName
+		from 
+			t_experiencestore_apply_classify sc,
+			t_goods_classify classify
+			left join t_goods_classify pc on classify.classify_parentid=pc.id
+		where 
+			sc.goods_classify_id=classify.id and sc.entkbn=0 and
+			sc.experiencestore_apply_id=#{storeid}
+	</select>
+	
+	<!-- 添加体验店 -->
+	<insert id="addStore" parameterType="store">
+		insert into t_experiencestore_apply (
+			id,
+			apply_name,
+			city_code,
+			apply_phone_num,
+			apply_addr,
+			status,
+			longitude,
+			latitude,
+			area,
+			doorhead_url,
+			inner_url00,
+			inner_url01,
+			business_licence_url,
+			business_weekly_start,
+			business_weekly_end,
+			business_time_end,
+			business_time_start,
+			<!-- handle_idcard, -->
+			apply_user_id,
+			create_time,
+			create_by,
+			apply_current_business
+		) values (
+			#{id},
+			#{applyName},
+			#{cityCode},
+			#{applPhoneNum},
+			#{applyAddr},
+			'01',
+			#{longitude},
+			#{latitude},
+			#{area},
+			#{doorheadUrl},
+			#{innerUrl00},
+			#{innerUrl01},
+			#{businessLicenceUrl},
+			#{businessWeeklyStart},
+			#{businessWeeklyEnd},
+			#{businessTimeEnd},
+			#{businessTimeStart},
+			<!-- #{handleIdcard}, -->
+			#{applyUserid},
+			now(),
+			#{createBy},
+			#{applyCurrentBusiness}
+		)
+	</insert>
+	
+	<!-- 添加体验店分类 -->
+	<insert id="addStoreClassify">
+		insert into t_experiencestore_apply_classify (id, goods_classify_id, experiencestore_apply_id, create_time, create_by) values
+		<foreach collection="classifyids" item="item" separator=",">
+			(replace(uuid(),'-',''), #{item}, #{storeid}, now(), #{operater})
+		</foreach>
+	</insert>
+	
+	<!-- 编辑体验店 -->
+	<update id="updateStore" parameterType="store">
+		update t_experiencestore_apply set 
+			apply_name = #{applyName},
+			city_code = #{cityCode},
+			apply_phone_num = #{applPhoneNum},
+			apply_addr = #{applyAddr},
+			longitude = #{longitude},
+			latitude = #{latitude},
+			area = #{area},
+			doorhead_url = #{doorheadUrl},
+			inner_url00 = #{innerUrl00},
+			inner_url01 = #{innerUrl01},
+			business_licence_url = #{businessLicenceUrl},
+			business_weekly_start = #{businessWeeklyStart},
+			business_weekly_end = #{businessWeeklyEnd},
+			business_time_end = #{businessTimeEnd},
+			business_time_start = #{businessTimeStart},
+			<!-- handle_idcard = #{handleIdcard}, -->
+			<!-- apply_user_id = #{applyUserid}, -->
+			apply_current_business = #{applyCurrentBusiness},
+			update_by = #{updateBy}
+		where id=#{id}
+	</update>
+	
+	<!-- 禁用/启用 体验店 -->
+	<update id="startStopStore">
+		update t_experiencestore_apply set entkbn=#{action}, update_by=#{operater}, version=version+1 where id in
+		<foreach collection="storeids" item="item" open="(" separator="," close=")">#{item}</foreach>
+	</update>
+	<!-- 删除体验店分类 -->
+	<update id="delStoreClassify">
+		update t_experiencestore_apply_classify set entkbn=9, update_by=#{operater}, version=version+1 where experiencestore_apply_id in
+		<foreach collection="storeids" item="item" open="(" separator="," close=")">#{item}</foreach>
+	</update>
+	
+<!-- 	<resultMap type="dianfan.entities.ExperiencestoreApply" id="experienceinfomap">
+		<id column="" property=""/>
+		<result column="" property=""/>
+	</resultMap> -->
+	
+	<!--获取体验店详情 -->
+	<select id="findExperienceInfo" parameterType="string" resultType="ExperiencestoreApply">
+		SELECT 
+			id id,
+			apply_name applyName,
+			apply_phone_num applyPhoneNum,
+			apply_addr applyAddr,
+			longitude longitude,
+			latitude latitude,
+			doorhead_url doorheadUrl,
+			inner_url00 innerUrl00,
+			inner_url01 innerUrl01,
+			apply_user_id applyUserId
+		FROM 
+			t_experiencestore_apply
+		WHERE
+			entkbn = 0 and id = #{id}
+	</select>
+	<!-- 获取体验店下的商品 -->
+	<select id="findGoodsListByExs" resultType="GoodsModels" parameterType="string">
+		SELECT distinct
+			list.id id,
+			list.goods_title goodsTitle,
+			list.goods_title_en goodsTitleEn,
+			list.goods_desc goodsDesc,
+			list.goods_category goodsCategory,
+			pic.pic_addr goodsThumbnail,
+			list.price price
+		FROM
+			t_goods_list list , t_goods_pics pic ,
+		t_goods_price pri ,
+(
+			SELECT goods_id
+			FROM
+				t_experiencestore_order
+			WHERE
+				experiencestore_apply_id = #{id}
+		) es
+		WHERE
+			list.entkbn = 0 AND pic.pic_type = '01' AND list.id = pic.goods_id AND list.id = pri.goods_id
+		AND list.id = es.goods_id
+	</select>
+	
+	<!-- 获取体验店下的优惠券 -->
+	<select id="findCoupons" parameterType="string" resultType="Coupon">
+		SELECT
+			id id,
+			coupon_name couponName,
+			coupon_num couponNum,
+			coupon_endtime couponEndtime,
+			coupon_condtion couponCondtion,
+			coupon_reduce_money couponReduceMoney,
+			coupon_des couponDes
+		FROM
+			t_coupon
+		WHERE
+			coupon_apply = '01'
+		AND coupon_type = '01'
+		AND entkbn = 0 AND coupon_endtime &gt; now() 
+		AND (store_id LIKE CONCAT('%','','%') or store_id is null or (store_id LIKE CONCAT('%',#{id},'%')))
+	</select>
+	
+	<!-- 给用户添加优惠券 -->
+	<insert id="getUserGetCoupon" parameterType="map">
+		INSERT INTO t_user_coupon_relate (
+			id,
+			coupon_id,
+			user_id,
+			draw_date,
+			used_end_time,
+			create_time,
+			create_by
+		)
+		VALUES
+			(
+				REPLACE (uuid(), '-', ''),
+				#{id},
+				#{userid},
+				NOW(),
+				#{userendtime},
+				NOW(),
+				#{userid}
+			)
+	
+	</insert>
+	
+	
+</mapper> 

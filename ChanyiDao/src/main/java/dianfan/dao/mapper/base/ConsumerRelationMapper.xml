@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="dianfan.dao.mapper.base.ConsumerRelationMapper">
+	
+	<!-- 根据qr_num获取角色区分 -->
+	<select id="getRoleDistinguish" resultType="string">
+		select role_distinguish from m_role where id=(
+			select roleid from t_user_role where userid=(
+				select id from t_user_userinfo where qr_num=#{qr_num} and id != #{userid} 
+			)
+		)
+	</select>
+	
+	<!-- 绑定消费关系 -->
+	<update id="updateBindRelation">
+		update t_user_userinfo set 
+			<if test="roleDistinguish == '05'">experiencestore_qr_num=#{qr_num}</if>
+			<if test="roleDistinguish == '06'">saler_qr_num=#{qr_num}, consumer_qr_num=null</if>
+			<if test="roleDistinguish == '07'">consumer_qr_num=#{qr_num}, saler_qr_num=null</if>
+		where 
+			id=#{userid}
+	</update>
+	
+	<!-- 根据qr_num获取用户角色 -->
+	<select id="getRoleDistinguishByQrnum" parameterType="string" resultType="dianfan.entities.role.UserRole">
+		select 
+			users.id userid, role.id roleid, role.role_distinguish descption
+		from 
+			t_user_userinfo users,
+			t_user_role urole,
+			m_role role 
+		where 
+			users.id=urole.userid and
+			urole.roleid=role.id and 
+			users.qr_num=#{qr_num}
+	</select>
+</mapper>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

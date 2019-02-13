@@ -1,0 +1,70 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="dianfan.dao.mapper.adminmanage.AdminFeedbackMapper">
+
+	<!-- 获取用户反馈数量 -->
+	<select id="findFeedbackList" parameterType="map" resultType="int">
+		SELECT 
+			COUNT(*) 
+		FROM 
+			t_feedback 
+		WHERE 
+			entkbn != 9
+		<if test=' type != null and type != "" '>
+			and feedback_type = #{type}
+		</if>
+		<if test=' starttime != null and starttime != "" and endtime != null and endtime != "" '>
+			<bind name="_starttime" value="starttime + ' 00:00:00' " />
+			<bind name="endtime_" value="endtime + ' 23:59:59' " />
+			and create_time between #{_starttime} and #{endtime_} 
+		</if>
+	</select>
+
+
+	<!-- 获取用户反馈列表 -->
+	<select id="feedbackList" parameterType="map" resultType="FeedBack">
+		SELECT 
+			feed.id, usein.nick_name nickName, feed.telno, feed.pic_url picUrl, feed.feedback_type feedbackType, feed.content, feed.create_time createTime, feed.create_by createBy 
+		FROM 
+			t_feedback feed LEFT JOIN t_user_userinfo usein ON feed.user_id = usein.id
+		WHERE feed.entkbn != 9  
+			<if test=' type != null and type != "" '>
+				and feed.feedback_type = #{type}
+			</if>
+			<if test=' starttime != null and starttime != "" and endtime != null and endtime != "" '>
+				<bind name="_starttime" value="starttime + ' 00:00:00' " />
+				<bind name="endtime_" value="endtime + ' 23:59:59' " />
+				and feed.create_time between #{_starttime} and #{endtime_} 
+			</if>
+			order by feed.create_time desc
+		LIMIT #{start}, #{length}
+	</select>
+	
+	<!-- 批量删除用户反馈列表 -->
+	<update id="delfeedbackType" parameterType="map">
+		UPDATE t_feedback SET entkbn = 9 WHERE id in
+		<foreach collection="idList" index="index" item="item" close=")" open="(" separator="," >
+			#{item}
+		</foreach>
+	</update>
+	
+	
+ 
+</mapper>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

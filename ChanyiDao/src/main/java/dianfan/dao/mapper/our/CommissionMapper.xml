@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="UTF-8"?>    
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"    
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="dianfan.dao.mapper.our.CommissionMapper">
+	<!--设置entities类和数据库中表的字段一一对应，注意数据库字段和domain类中的字段名称不致，此处一定要！ -->
+	<resultMap id="BaseResultMap" type="dianfan.entities.our.UserBounsDetailModel">
+		<id column="id" property="id"  />
+		<result column="user_id" property="userId"  />
+		<result column="order_no" property="orderNo"  />
+		<result column="bouns_percent" property="bounsPercent" />
+		<result column="bouns_fee" property="bounsFee"  />
+		<result column="bouns_from" property="bounsFrom"  />
+		<result column="user_bouns_status" property="userBounsStatus"  />
+		<result column="reason" property="reason"  />
+		<result column="create_time" property="createTime" />
+		<result column="entkbn" property="entkbn"  />
+	</resultMap>
+	<resultMap id="BaseResultMapMoneyEntryExit" type="dianfan.entities.our.MoneyEntryExit">
+		<id column="id" property="id"  />
+		<result column="money" property="money"  />
+		<result column="create_time" property="createtime"  />
+		<result column="status" property="status" />
+	</resultMap>
+	  <sql id="Base_Column_List" >
+         id, user_id, order_no, bouns_percent, bouns_fee, bouns_from, 
+         user_bouns_status, reason, create_time, entkbn
+       </sql>
+	<!-- 查询佣金列表 -->
+	<select id="findCommission" parameterType="string" resultMap="BaseResultMap">
+		select <include refid="Base_Column_List" /> from t_user_bouns_detail where user_id = #{userid} and entkbn=0  order by create_time desc
+	</select>
+	<!--  入账出账查询 -->
+	<select id="findUserMoneyEntryExit" parameterType="string" resultMap="BaseResultMapMoneyEntryExit">
+		select * from (
+            (select bouns_fee money, 1 status ,create_time from t_user_bouns_detail where entkbn=0 and user_id=#{userid}) 
+             union all 
+            (select money, 2 status, create_time from t_user_withdraw_deposit_stream where entkbn=0 and user_id=#{userid})
+            )o ORDER BY create_time desc
+	</select>
+</mapper> 

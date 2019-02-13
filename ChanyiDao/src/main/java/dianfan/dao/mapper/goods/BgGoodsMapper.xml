@@ -1,0 +1,465 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="dianfan.dao.mapper.goods.BgGoodsMapper">
+	
+	<!-- 根据条件获取筛选后的商品数量 -->
+	<select id="getScreenGoodsCount" resultType="int">
+		select 
+			count(*)
+		from 
+			<trim suffixOverrides=",">
+				t_goods_list glist,
+				<if test='staffid != null'>
+					<!-- 员工商品 -->
+					(select goods_id, sort from t_goods_user where user_id=#{staffid} and entkbn=0) staff,
+				</if>
+				<if test='labelid_arr != null'>
+					(select distinct goods_id from t_goods_list_labels where
+						<foreach collection="labelid_arr" item="item" separator=" or ">label_id=#{item}</foreach>
+					) label, 
+				</if>
+				<if test='attrid_arr != null'>
+					(select distinct goodsid from t_goods_attr_releate where
+						<foreach collection="attrid_arr" item="item" separator=" or ">attributes_id=#{item}</foreach>
+					) attr, 
+				</if>
+			</trim>
+		where
+			<if test='labelid_arr != null'>glist.id=label.goods_id and</if>
+			<if test='attrid_arr != null'>glist.id=attr.goodsid and</if>
+			<if test='labelid_arr != null and attrid_arr != null'>label.goods_id=attr.goodsid and</if>
+			<if test='staffid != null'>glist.id=staff.goods_id and</if>
+			
+			<if test='goodsTitle != null'>
+				<!-- 商品标题筛选 -->
+				<bind name="_goodsTitle_" value="'%' + goodsTitle + '%'"/>
+				glist.goods_title like #{_goodsTitle_} and
+			</if>
+			<!-- 是否易拼(0否，1是，默认全部) -->
+			<if test='easySpelling != null'>glist.is_easy_spelling=#{easySpelling} and</if>
+			<!-- 商品分类id -->
+			<if test='goodsClassifyid != null'>glist.goods_classify_id=#{goodsClassifyid} and</if>
+			<!-- 上下架(0下架，1上架，默认全部) -->
+			<if test='upperlower != null'>glist.upperlower=#{upperlower} and</if>
+			<!-- 非定制的商品价格-低价区间 -->
+			<if test='l_price != null'>
+				<!-- 从最低价搜索 -->
+				price &gt;= #{l_price} and 
+			</if>
+			<if test='h_price != null'>
+				<!-- 从最高价搜索 -->
+				price &lt;= #{h_price} and 
+			</if>
+			glist.entkbn != 9
+	</select>
+	
+	<resultMap type="bgGoods" id="goodsMapList">
+		<id column="id" property="id"/>
+		<result column="goods_title" property="goodsTitle"/>
+		<result column="is_easy_spelling" property="isEasySpelling"/>
+		<result column="is_staff_easy_spelling" property="isStaffEasySpelling"/>
+		<result column="goods_title_en" property="goodsTitleEn"/>
+		<result column="goods_classify_id" property="goodsClassifyId"/>
+		<result column="classify_name" property="goodsClassifyName"/>
+		<result column="sales_count" property="salesCount"/>
+		<result column="goods_desc" property="goodsDesc"/>
+		<result column="price" property="price"/>
+		<result column="price_easy_spelling" property="priceEasySpelling"/>
+		<result column="collection_num" property="collectionNum"/>
+		<result column="upperlower" property="upperlower"/>
+		<result column="goods_category" property="goodsCategory"/>
+		<result column="create_time" property="createTime"/>
+		<result column="entkbn" property="entkbn"/>
+		<result column="pic_addr" property="thumbPic"/>
+		<result column="sort" property="sort"/>
+	</resultMap>
+	<!-- 根据条件获取筛选后的商品 -->
+	<select id="findScreenGoodsList" resultMap="goodsMapList">
+		select 
+			glist.*, pic.pic_addr
+		from 
+		(
+			select 
+				glist.*, <if test='staffid != null'>staff.sort,</if> <if test='staffid == null'>0 sort,</if> cly.classify_name
+			from 
+				<trim suffixOverrides=",">
+					t_goods_list glist left join
+					(
+						select 
+							level2.id, CONCAT(level1.classify_name,' - ',level2.name) classify_name
+						from 
+							t_goods_classify level1,
+							(select id, classify_parentid, classify_name name from t_goods_classify) level2
+						where 
+							level1.id=level2.classify_parentid
+					) cly on glist.goods_classify_id=cly.id,
+					<if test='staffid != null'>
+						<!-- 员工商品 -->
+						(select goods_id, sort from t_goods_user where user_id=#{staffid} and entkbn=0) staff,
+					</if>
+					<if test='labelid_arr != null'>
+						(select distinct goods_id from t_goods_list_labels where
+							<foreach collection="labelid_arr" item="item" separator=" or ">label_id=#{item}</foreach>
+						) label, 
+					</if>
+					<if test='attrid_arr != null'>
+						(select distinct goodsid from t_goods_attr_releate where
+							<foreach collection="attrid_arr" item="item" separator=" or ">attributes_id=#{item}</foreach>
+						) attr, 
+					</if>
+				</trim>
+			where
+				<if test='labelid_arr != null'>glist.id=label.goods_id and</if>
+				<if test='attrid_arr != null'>glist.id=attr.goodsid and</if>
+				<if test='labelid_arr != null and attrid_arr != null'>label.goods_id=attr.goodsid and</if>
+				<if test='staffid != null'>glist.id=staff.goods_id and</if>
+				
+				<if test='goodsTitle != null'>
+					<!-- 商品标题筛选 -->
+					<bind name="_goodsTitle_" value="'%' + goodsTitle + '%'"/>
+					glist.goods_title like #{_goodsTitle_} and
+				</if>
+				<!-- 是否易拼(0否，1是，默认全部) -->
+				<if test='easySpelling != null'>glist.is_easy_spelling=#{easySpelling} and</if>
+				<!-- 商品分类id -->
+				<if test='goodsClassifyid != null'>glist.goods_classify_id=#{goodsClassifyid} and</if>
+				<!-- 上下架(0下架，1上架，默认全部) -->
+				<if test='upperlower != null'>glist.upperlower=#{upperlower} and</if>
+				<!-- 非定制的商品价格-低价区间 -->
+				<if test='l_price != null'>
+					<!-- 从最低价搜索 -->
+					price &gt;= #{l_price} and 
+				</if>
+				<if test='h_price != null'>
+					<!-- 从最高价搜索 -->
+					price &lt;= #{h_price} and 
+				</if>
+				glist.entkbn != 9 
+				<trim prefix="order by " suffixOverrides=",">
+					<choose>
+						<when test='sales_sort == 0 or sales_sort == 1 or coll_sort == 0 or coll_sort == 1 or price_sort == 0 or price_sort == 1'>
+							<if test='sales_sort == 0'>
+								<!-- 销售数量asc排序 -->
+								glist.sales_count,
+							</if>
+							<if test='sales_sort == 1'>
+								<!-- 销售数量desc排序 -->
+								glist.sales_count desc,
+							</if>
+							<if test='coll_sort == 0'>
+								<!-- 收藏数量asc排序 -->
+								glist.collection_num,
+							</if>
+							<if test='coll_sort == 1'>
+								<!-- 收藏数量desc排序 -->
+								glist.collection_num desc,
+							</if>
+							<if test='price_sort == 0'>
+								<!-- 价格asc排序 -->
+								glist.price,
+							</if>
+							<if test='price_sort == 1'>
+								<!-- 价格desc排序 -->
+								glist.price desc,
+							</if>
+						</when>
+						<!-- 默认按时间降序排序 -->
+						<otherwise>
+							<if test='staffid != null'>staff.sort desc</if>
+							<if test='staffid == null'>glist.create_time desc</if>
+						</otherwise>
+					</choose>
+				</trim>
+				limit #{pageStart}, #{pageSize}
+			) glist left join (
+				select goods_id, pic_addr from t_goods_pics where pic_type = '01' and pic_pc_mobile = '02' and entkbn = 0
+			) pic on glist.id=pic.goods_id
+			<trim prefix="order by " suffixOverrides=",">
+				<choose>
+					<when test='sales_sort == 0 or sales_sort == 1 or coll_sort == 0 or coll_sort == 1 or price_sort == 0 or price_sort == 1'>
+						<if test='sales_sort == 0'>
+							<!-- 销售数量asc排序 -->
+							glist.sales_count,
+						</if>
+						<if test='sales_sort == 1'>
+							<!-- 销售数量desc排序 -->
+							glist.sales_count desc,
+						</if>
+						<if test='coll_sort == 0'>
+							<!-- 收藏数量asc排序 -->
+							glist.collection_num,
+						</if>
+						<if test='coll_sort == 1'>
+							<!-- 收藏数量desc排序 -->
+							glist.collection_num desc,
+						</if>
+						<if test='price_sort == 0'>
+							<!-- 价格asc排序 -->
+							glist.price,
+						</if>
+						<if test='price_sort == 1'>
+							<!-- 价格desc排序 -->
+							glist.price desc,
+						</if>
+					</when>
+					<!-- 默认按时间降序排序 -->
+					<otherwise>
+						<if test='staffid != null'>glist.sort desc</if>
+						<if test='staffid == null'>glist.create_time desc</if>
+					</otherwise>
+				</choose>
+			</trim>
+	</select>
+	
+	<resultMap type="bgGoods" id="goodsMapDetail">
+		<id column="id" property="id"/>
+		<result column="goods_title" property="goodsTitle"/>
+		<result column="is_easy_spelling" property="isEasySpelling"/>
+		<result column="is_staff_easy_spelling" property="isStaffEasySpelling"/>
+		<result column="goods_title_en" property="goodsTitleEn"/>
+		
+		<result column="goods_classify_id" property="goodsClassifyId"/>
+		<result column="classify_name" property="goodsClassifyName"/>
+		<result column="classify_name_en" property="goodsClassifyNameEn"/>
+		
+		<result column="sales_count" property="salesCount"/>
+		<result column="goods_desc" property="goodsDesc"/>
+		<result column="price" property="price"/>
+		<result column="price_easy_spelling" property="priceEasySpelling"/>
+		<result column="collection_num" property="collectionNum"/>
+		<result column="upperlower" property="upperlower"/>
+		<result column="goods_category" property="goodsCategory"/>
+		
+		<result column="create_time" property="createTime"/>
+		<result column="create_by" property="createBy"/>
+		<result column="create_name" property="createName"/>
+		
+		<result column="create_time" property="updateTime"/>
+		<result column="update_by" property="updateBy"/>
+		<result column="update_name" property="updateName"/>
+		
+		<result column="entkbn" property="entkbn"/>
+
+		<result column="product_sku" property="productSku"/>
+		<result column="weight" property="weight"/>
+		<result column="length" property="length"/>
+		<result column="width" property="width"/>
+		<result column="height" property="height"/>
+		<result column="thrid_category_no" property="thridCategoryNo"/>
+		<result column="install_flag" property="installFlag"/>
+		<result column="spg_sale_discount" property="spgSaleDiscount"/>
+		<result column="exp_sale_discount" property="expSaleDiscount"/>
+		<result column="cps_sale_discount" property="cpsSaleDiscount"/>
+	</resultMap>
+	<!-- 根据商品id获取商品详情 -->
+	<select id="getGoodsInfoDetailById" parameterType="string" resultMap="goodsMapDetail">
+		select 
+			goods.*, 
+			cly.classify_name, cly.classify_name_en,
+			cuser.nick_name create_name, upuser.nick_name update_name
+		from 
+			t_goods_list goods 
+			left join t_goods_classify cly on goods.goods_classify_id=cly.id
+			left join t_user_userinfo cuser on goods.create_by=cuser.id
+			left join t_user_userinfo upuser on goods.update_by=upuser.id
+		where 
+			goods.id=#{id}
+	</select>
+	
+	
+	<!-- 新增商品基础数据 -->
+	<insert id="addGoods" parameterType="goodsModels">
+		insert into t_goods_list 
+			(id, goods_title, is_easy_spelling, is_staff_easy_spelling, goods_title_en, goods_classify_id, sales_count,
+			goods_desc, price, collection_num, upperlower, goods_category, create_time, create_by, price_easy_spelling,
+			product_sku, weight, length, width, height, thrid_category_no, install_flag, spg_sale_discount, exp_sale_discount, cps_sale_discount)
+		values
+			(#{id}, #{goodsTitle}, #{isEasySpelling}, #{isStaffEasySpelling}, #{goodsTitleEn}, #{goodsClassifyId}, 0,
+			#{goodsDesc}, #{price}, 0, #{upperlower}, #{goodsCategory}, now(), #{createBy}, #{priceEasySpelling},
+			#{productSku}, #{weight}, #{length}, #{width}, #{height}, #{thridCategoryNo}, #{installFlag}, #{spgSaleDiscount}, #{expSaleDiscount}, #{cpsSaleDiscount})
+	</insert>
+	
+	<!-- 绑定商品与标签关系 -->
+	<insert id="addGoodsLabelRelation">
+		insert into t_goods_list_labels (id, goods_id, label_id, sort) values
+		<foreach collection="labelids" item="item" index="i" separator=",">
+			(replace(uuid(),'-',''), #{goodsid}, #{item}, #{i})
+		</foreach>
+	</insert>
+	
+	<!-- 绑定商品与属性关系 -->
+	<insert id="addGoodsAttrRelation">
+		insert into t_goods_attr_releate (id, attributes_id, goodsid) values
+		<foreach collection="attrids" item="item" index="i" separator=",">
+			(replace(uuid(),'-',''), #{item}, #{goodsid})
+		</foreach>
+	</insert>
+	
+	<!-- 添加商品图片 -->
+	<insert id="addGoodsPics" >
+		insert into t_goods_pics (pic_id, goods_id, pic_type, pic_sort, pic_addr, pic_pc_mobile, create_time, create_by) values
+		<foreach collection="pics" item="item" separator=",">
+			(replace(uuid(),'-',''), #{goodsid}, #{item.picType}, #{item.picSort}, #{item.picAddr}, #{item.picPcMobile}, now(), #{userid})
+		</foreach>
+	</insert>
+	
+	<!-- 删除商品价格 -->
+	<update id="delGoodsPriceById">
+		update t_goods_price set entkbn=9, update_by=#{operator}, only_identity=null where 
+		<foreach collection="goodsids" item="item" open="(" separator=" or " close=")">id=#{item}</foreach>
+	</update>
+	
+	<!-- 添加商品规格 -->
+	<insert id="addGoodsSpecs">
+		insert into t_goods_spec (id, goods_id, spec_name, spec_catagory, create_time, create_by) values
+		<foreach collection="specids" item="item" separator=",">
+			(#{item.id}, #{goodsid}, #{item.specName}, #{item.specCatagory}, now(), #{userid})
+		</foreach>
+	</insert>
+	
+	<!-- 添加商品价格 -->
+	<insert id="addGoodsPrices">
+		insert into t_goods_price (id, goods_id, spec_ids, goods_pic, price, price_easy_spelling, create_time, create_by, only_identity) values
+		<foreach collection="prices" item="item" separator=",">
+			(replace(uuid(),'-',''), #{goodsid}, #{item.specIds}, #{item.goodsPic}, #{item.price}, #{item.priceEasySpelling}, now(), #{userid}, #{item.onlyIdentity})
+		</foreach>
+	</insert>
+	
+	<!-- 批量删除商品 -->
+	<update id="delGoods">
+		update 
+			t_goods_list goods 
+			left join t_goods_pics pic on goods.id=pic.goods_id
+			left join t_goods_spec spec on goods.id=spec.goods_id
+			left join t_goods_price price on goods.id=price.goods_id
+		set 
+			goods.entkbn=9, goods.update_by=#{userid},
+			pic.entkbn=9, pic.update_by=#{userid},
+			spec.entkbn=9, spec.update_by=#{userid},
+			price.entkbn=9, price.update_by=#{userid} 
+		where 
+		<foreach collection="goodsids" item="item" separator=" or ">goods.id=#{item}</foreach>
+	</update>
+	
+	<!-- 商品上下架 -->
+	<update id="updateGoodsUpperLower">
+		update t_goods_list set upperlower=#{action}, update_by=#{operator} where id in
+		<foreach collection="goodsids" item="item" open="(" separator="," close=")">#{item}</foreach>
+	</update>
+	
+	<!-- 修改商品基础数据 -->
+	<update id="editGoods" parameterType="goodsModels">
+		update t_goods_list set 
+			goods_title=#{goodsTitle},
+			is_easy_spelling=#{isEasySpelling},
+			is_staff_easy_spelling=#{isStaffEasySpelling},
+			goods_title_en=#{goodsTitleEn},
+			goods_classify_id=#{goodsClassifyId},
+			goods_desc=#{goodsDesc},
+			price=#{price},
+			upperlower=#{upperlower},
+			goods_category=#{goodsCategory},
+			update_by=#{updateBy},
+			version=version+1,
+			price_easy_spelling=#{priceEasySpelling},
+
+			product_sku = #{productSku},
+			weight = #{weight},
+			length = #{length},
+			width = #{width},
+			height = #{height},
+			thrid_category_no = #{thridCategoryNo},
+			install_flag=#{installFlag},
+			spg_sale_discount=#{spgSaleDiscount},
+			exp_sale_discount=#{expSaleDiscount},
+			cps_sale_discount=#{cpsSaleDiscount}
+		where 
+			id=#{id}
+	</update>
+	
+	<resultMap type="staffGoods" id="staffGoodsMap">
+		<id column="id" property="id"/>
+		<result column="user_id" property="userid"/>
+		<result column="goods_id" property="goodsid"/>
+		<result column="goods_title" property="goodsTitle"/>
+		<result column="sort" property="sort"/>
+		<result column="create_time" property="createTime"/>
+	</resultMap>
+	<!-- 员工下的商品列表（简单列表） -->
+	<select id="findStaffBindGoods" parameterType="string" resultMap="staffGoodsMap">
+		select 
+			guser.id, guser.user_id, guser.goods_id, guser.sort, guser.create_time, goods.goods_title
+		from  
+			t_goods_user guser, t_goods_list goods
+		where 
+			guser.user_id=#{staffid} and guser.goods_id=goods.id and guser.entkbn=0 and goods.entkbn!=9
+	</select>
+	
+	<!-- 绑定商品  -->
+	<insert id="bindGoods">
+		insert into t_goods_user (id, user_id, goods_id, sort, create_time, create_by) values
+		<foreach collection="goodsids" item="item" separator=",">
+			(replace(uuid(),'-',''), #{staffid}, #{item.goodsid}, #{item.sort}, now(), #{operator})
+		</foreach>
+	</insert>
+	
+	<!-- 解绑商品 -->
+	<update id="unbindGoods">
+		update t_goods_user set entkbn=9, update_by=#{operator}, version=version+1 where user_id=#{staffid} 
+		<if test='goodsids != null and "goodsids".size() > 0'>
+			and goods_id in
+			<foreach collection="goodsids" item="item" open="(" separator="," close=")">#{item}</foreach>
+		</if>
+	</update>
+	
+	<!-- 更新商品排序数据 -->
+	<update id="updateStaffGoodsSort">
+		update t_goods_user set update_by=#{operator}, version=version+1, sort= 
+		<trim prefix="case goods_id " suffix=" end ">
+			<foreach collection="sortData" item="item">
+				when #{item.goodsid} then #{item.sort}
+			</foreach>
+		</trim>
+		where user_id=#{staffid}
+	</update>
+	
+	<!-- 获取保留的商品价格id列表 -->
+	<select id="findReserveGoodsPrice" parameterType="list" resultType="goodsPrice">
+		select id, only_identity onlyIdentity from t_goods_price where 
+		<foreach collection="list" item="item" open="(" separator=" or " close=")">only_identity=#{item.onlyIdentity}</foreach>
+		and entkbn=0 
+	</select>
+	
+	<!-- 将购物车中此价格的商品置为已失效 -->
+	<update id="updateGoodsCartStatus">
+		update t_goods_cart set entkbn=1 where goods_id=#{goodsid} and entkbn=0  and
+		<foreach collection="goodsPriceIds" item="item" open="(" separator=" or " close=")">goods_price_id=#{item}</foreach>
+	</update>
+	<update id="updateGoodsCartStatus1" parameterType="list">
+		update t_goods_cart set entkbn=1 where entkbn=0 and
+		<foreach collection="array" item="item" open="(" separator=" or " close=")">goods_id=#{item}</foreach>
+	</update>
+	
+	<!-- 将未付款的订单中包含此价格的商品置为被动关闭 -->
+	<update id="updateOrderStatus">
+		update 
+			t_order o, t_order_goods og
+		set 
+			o.order_status='21', o.create_by=#{operator}, og.create_by=#{operator}
+		where 
+			o.order_id=og.order_id and og.goods_id=#{goodsid} and  o.order_status='01' and
+			<foreach collection="goodsPriceIds" item="item" open="(" separator=" or " close=")">og.goods_price_id=#{item}</foreach>
+	</update>
+	<update id="updateOrderStatus1">
+		update 
+			t_order o, t_order_goods og
+		set 
+			o.order_status='21', o.create_by=#{operator}, og.create_by=#{operator}
+		where 
+			o.order_id=og.order_id and o.order_status='01' and
+			<foreach collection="goodsids" item="item" open="(" separator=" or " close=")">og.goods_id=#{item}</foreach>
+	</update>
+	
+</mapper>

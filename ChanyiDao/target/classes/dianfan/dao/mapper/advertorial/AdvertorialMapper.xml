@@ -1,0 +1,108 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="dianfan.dao.mapper.advertorial.AdvertorialMapper">
+	
+  <!-- 文章resultmap -->
+  <resultMap id="advertorialMap" type="dianfan.entities.advertorial.Advertorial" >
+    <id column="id" property="id"/>
+    <result column="classify_id" property="classifyId"/>
+    <result column="title" property="title"/>
+    <result column="content" property="content"/>
+    <result column="visit_counts" property="visitCounts"/>
+    <result column="pic_addr" property="picAddr"/>
+    <result column="thumb_up_num" property="thumbUpNum"/>
+    <result column="thumb_up_num_n" property="thumbUpNumN"/>
+    <result column="recommend" property="recommend"/>
+    <result column="sort" property="sort"/>
+    <result column="create_time" property="createTime"/>
+    <result column="create_by" property="createBy"/>
+    <result column="update_time" property="updateTime"/>
+    <result column="update_by" property="updateBy"/>
+    <result column="entkbn" property="entkbn"/>
+    <result column="version" property="version"/>
+  </resultMap>
+	
+	<!-- 根据分类id获取多条文章数据  -->
+	<select id="findAdvertorialsByClassifyId"  parameterType="map"   resultType="dianfan.entities.advertorial.AdvertorialModel">
+		select 
+			adv.* 
+			<if test='userid == null'>, 0 praise</if>
+			<if test='userid != null'>, IF(thumb.advertorial_id is null,0,1) praise</if>
+		from (
+			SELECT
+				id AS id,
+				classify_id AS classifyId,
+				title AS title,
+				content AS content,
+				visit_counts AS visitCounts,
+				pic_addr AS picAddr,
+				(
+					IFNULL(thumb_up_num_n,0) + IFNULL(thumb_up_num,0)
+				) AS thumbUpTotal,
+				create_time AS createTime,
+				create_by AS createBy
+			FROM
+				t_advertorial
+			WHERE
+				entkbn = 0
+			AND classify_id = #{classifyId}  order by sort desc 
+			limit #{start},#{count}
+			) adv
+			<if test='userid != null'>
+				left join (
+				select DISTINCT advertorial_id from t_advertorial_thumb_up where user_id=#{userid} and entkbn=0
+				) thumb on adv.id=thumb.advertorial_id
+			</if>
+	</select>
+	
+	<!-- 获取总条数  -->
+
+<!-- 	<select id="findAdvertorialsCount"  parameterType="string"   resultType="Integer"> -->
+<!-- 		select count(*) from t_advertorial where entkbn = 0 and classify_id = #{classifyId} -->
+<!-- 	</select> -->
+	<!-- <select id="findAdvertorialsCount"  parameterType="string"   resultMap="Integer">
+		select count(*) from t_advertorial where entkbn = 0 and classify_id = #{classify_id}
+	</select> -->
+	<select id="findAdvertorialsCount"  parameterType="string"   resultType="Integer">
+		select count(*) from t_advertorial where entkbn = 0 and classify_id = #{classifyId}
+	</select>
+	
+	<!-- 根据文章id获取文章详情  -->
+	<select id="getAdvertorialDetailById"  parameterType="string"   resultType="dianfan.entities.advertorial.AdvertorialModel">
+		select id as id,classify_id as classifyId,title as title,content as content,visit_counts as visitCounts,pic_addr as picAddr,(IFNULL(thumb_up_num_n,0) + IFNULL(thumb_up_num,0)) as thumbUpTotal,create_time as createTime,create_by as createBy from t_advertorial where entkbn = 0 and id = #{id}
+	</select>
+	
+	<!-- 根据文章id获取文章所有详情  -->
+	<select id="getAdvertorialDetailAllById"  parameterType="string"   resultMap="advertorialMap">
+		select id,thumb_up_num,visit_counts from t_advertorial where entkbn = 0 and id = #{id}
+	</select>
+	
+	<!-- 更新文章浏览量 -->
+	<update id="updateAdvertorialVisitCounts" parameterType="dianfan.entities.advertorial.Advertorial">
+		update t_advertorial set visit_counts=#{visitCounts} where id=#{id}
+	</update>
+	
+	
+	<!-- 更新文章点赞量 -->
+	<update id="updateAdvertorialThumbUp" parameterType="dianfan.entities.advertorial.Advertorial">
+		update t_advertorial set thumb_up_num=#{thumbUpNum} where id=#{id}
+	</update>
+
+</mapper>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="dianfan.dao.mapper.goods.GoodsSpecMapper">
+	
+	<!-- 商品属性重复性检测 -->
+	<select id="checkGoodsAttrName" resultType="boolean">
+		select count(*) from t_goods_attributes where 
+		entkbn=0 and param_name=#{paramName} and param_key=#{paramKey}
+		<!-- 商品属性修改检测 -->
+		<if test="attrid != null">and id != #{attrid}</if>
+	</select>
+
+	<!-- 删除商品属性 -->
+	<update id="delGoodsAttr">
+		update t_goods_attributes set entkbn=9, update_by=#{userid}, version=version+1 where 
+		<foreach collection="attrids" item="item" separator=" or ">id=#{item}</foreach>
+	</update>
+	<!-- 删除商品属性关系 -->
+	<delete id="delGoodsAttrRelation" parameterType="list">
+		delete from t_goods_attr_releate where attributes_id in
+		<foreach collection="array" item="item" open="(" separator="," close=")">#{item}</foreach>
+	</delete>
+</mapper>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

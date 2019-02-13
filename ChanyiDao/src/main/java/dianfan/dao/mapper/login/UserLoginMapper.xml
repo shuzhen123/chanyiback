@@ -1,0 +1,112 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="dianfan.dao.mapper.login.UserLoginMapper">
+	<!-- 用户的信息 map -->
+	<resultMap type="dianfan.entities.UserInfo" id="userinfomap">
+		<id column="id" property="id"/>
+		<result column="union_id" property="unionId"/>
+		<result column="wxpub_openid" property="wxpubOpenid"/>
+		<result column="wxsmall_openid" property="wxsmallOpenid"/>
+		<result column="nick_name" property="nickName"/>
+		<result column="sex" property="sex"/>
+		<result column="avatar_url" property="avatarUrl"/>
+		<result column="telno" property="telno"/>
+		<result column="area_code" property="areaCode"/>
+		<result column="bank_card_no" property="bankCardNo"/>
+		<result column="bank_card_name" property="bankCardName"/>
+		<result column="bank_short" property="bankShort"/>
+		<result column="locked" property="locked"/>
+		<result column="pwd" property="pwd"/>
+		<result column="qr_num" property="qrNum"/>
+		<result column="extra_id" property="extraId"/>
+		<result column="create_time" property="createTime"/>
+		<result column="create_by" property="createBy"/>
+		<result column="update_time" property="updateTime"/>
+		<result column="update_by" property="updateBy"/>
+	</resultMap>
+	
+	<!-- 通过wxsmallopenid 获取用户的信息 -->
+	<select id="checkUserByOpenid" parameterType="string" resultMap="userinfomap">
+		select 
+			id, union_id, wxpub_openid, wxsmall_openid, nick_name, sex, avatar_url, telno, area_code, 
+			bank_card_no, bank_card_name, bank_short, locked, pwd, qr_num, extra_id, 
+			create_time, create_by, update_time, update_by
+		 from t_user_userinfo where wxsmall_openid = #{wxsmallopenid} and entkbn = 0
+	</select>
+
+	<!-- 通过unionId和openid 这个是解密之前的 获取用户的信息 -->
+	<select id="checkUserByUnionId" parameterType="map" resultMap="userinfomap">
+		select
+		 	id, union_id, wxpub_openid, wxsmall_openid, nick_name, sex, avatar_url, telno, area_code, 
+			bank_card_no, bank_card_name, bank_short, locked, pwd, qr_num, extra_id, 
+			create_time, create_by, update_time, update_by 
+		 from t_user_userinfo where union_id = #{unionId} or wxsmall_openid = #{openid} and entkbn = 0
+	</select>
+	<!-- 通过unionId  这个是解密之后的 获取用户的信息 -->
+	<select id="checkUserByuserUnion" parameterType="string" resultMap="userinfomap">
+		select 
+			id, union_id, wxpub_openid, wxsmall_openid, nick_name, sex, avatar_url, telno, area_code, 
+			bank_card_no, bank_card_name, bank_short, locked, pwd, qr_num, extra_id, 
+			create_time, create_by, update_time, update_by 
+		 from t_user_userinfo where union_id = #{_parameter} and entkbn = 0
+	</select>
+	
+	
+	
+	<!--===========================================分隔线===============================================-->
+	
+	<!-- 给新用户授权的map -->
+	<resultMap id="rolemap" type="userRoleModel" >
+		<id column="id" property="id"/>
+		<result column="role_name" property="roleName"/>
+		<result column="role_description" property="roleDescription"/>
+	</resultMap>
+	<!-- 获取普通人权限 -->
+	<select id="getRole" resultMap="rolemap">
+		SELECT id, role_description from m_role WHERE role_distinguish = 08 AND entkbn = 0
+	</select>
+
+
+	<!--==========================================分隔线===============================================-->
+	
+	<!-- 优惠券map -->
+	<resultMap type="couponModels" id="couponmap">
+		<id column="id" property="id"/>
+		<result column="coupon_endtime" property="couponEndtime"/>
+	</resultMap>
+	<!-- 获取用户注册优惠表 -->
+	<select id="fildFreeCouponList" resultMap="couponmap">
+		SELECT id, coupon_endtime FROM t_coupon WHERE coupon_type = 02 AND coupon_apply = 01 AND entkbn = 0
+	</select>
+	
+	<!--==========================================分隔线===============================================-->
+	
+	<!-- 给用户分发注册优惠券 -->
+	<insert id="addUserCoupon" parameterType="map">
+		INSERT INTO 
+			t_user_coupon_relate
+			(id, coupon_id, user_id, used_end_time, create_time, draw_date) 
+		VALUES
+			<foreach item="item" index="index" collection="coupon" separator=",">
+			 (replace(uuid(),'-',''), #{item.id} , #{userid} , #{item.couponEndtime} , now(), now())
+			 </foreach>
+	</insert>
+	
+</mapper>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

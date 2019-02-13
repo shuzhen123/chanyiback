@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="dianfan.dao.mapper.userrole.UserRoleMapper">
+	<select id="getUserRoleNum" parameterType="bgUserRoleModel" resultType="Integer">
+	select count(tur.id) from t_user_role tur inner join t_user_userinfo tuu on tur.userid=tuu.id where 
+	<if test="nickName !=null and nickName !=''"> 
+	<bind name="_nickname" value="'%'+nickName+'%'"/>
+	  tuu.nick_name like #{_nickname} and 
+	 </if>
+	<if test="descption !=null and descption !=''"> 
+	<bind name="_descption" value="'%'+descption+'%'"/>
+	 tur.descption  like #{_descption} and 
+	</if>
+	 tuu.entkbn=0 
+	</select>
+	<select id="findUserRoleList"  resultType="role">
+	select mr.id,mr.role_distinguish roleDistinguish,mr.role_name roleName,mr.role_description roleDescription,mr.sale_discount saleDiscount from m_role mr order by mr.role_distinguish 
+	</select>
+	<!-- 修改角色信息 -->
+	<update id="updateUserDiscount" parameterType="role">
+	  update m_role set 
+	  <if test="saleDiscount !=null and saleDiscount !=''">sale_discount = #{saleDiscount}</if>
+	  <if test="roleDescription !=null and roleDescription !=''">role_description = #{roleDescription} </if>
+	   where id=#{id}
+	</update>
+</mapper>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

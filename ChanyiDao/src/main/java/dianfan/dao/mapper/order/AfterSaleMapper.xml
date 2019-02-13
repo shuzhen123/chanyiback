@@ -1,0 +1,91 @@
+<?xml version="1.0" encoding="UTF-8"?>    
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"    
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="dianfan.dao.mapper.order.AfterSaleMapper">
+
+	<!-- 根据条件获取售后列表数据 -->
+	<select id="getAfterSaleCount" parameterType="map" resultType="int">
+		SELECT 
+		 count(*)
+		FROM
+		t_after_sale tas INNER JOIN t_order o ON tas.order_id = o.order_id INNER JOIN 
+		t_trade_ser ts ON o.order_id = ts.order_id
+		left join t_order_delivery_relate odr on tas.delivery_id=odr.delivery_id AND ts.order_id = odr.order_id 
+		WHERE
+		tas.entkbn=0 and o.entkbn=0 and ts.entkbn=0  
+		<if test='orderid != null and orderid != ""'>
+			<bind name="_orderid_" value="'%' + orderid + '%'" />
+			and tas.order_id like #{_orderid_}
+		</if>
+		<if test='name != null and name != ""'>
+			<bind name="_name_" value="'%' + name + '%'" />
+			and o.name like #{_name_}
+		</if>
+		<if test='orderType != null and orderType != ""'>and o.goods_type=#{orderType}</if>
+		<if test='payStyle != null and payStyle != ""'>and ts.pay_ways=#{payStyle}</if>
+		<if test='price_h != null and price_h != ""'>and ts.deposit_fee &gt;= #{price_h}</if>
+		<if test='price_l != null and price_l != ""'>and ts.deposit_fee &lt;= #{price_l}</if>
+		<if test='startTime != null and startTime != ""'>and o.create_time &gt;= #{startTime}</if>
+		<if test='endTime != null and endTime != ""'>and o.create_time &lt;= #{endTime}</if>
+	</select>
+
+	<resultMap type="afterSaleList" id="afterSaleMap">
+		<id column="id" property="id" />
+		<result column="order_id" property="orderId" />
+		<result column="reason" property="reason" />
+		<result column="pic_urls" property="picUrls" />
+		<result column="handle_status" property="handleStatus" />
+		<result column="result" property="result" />
+		<result column="name" property="name" />
+		<result column="telno" property="telno" />
+		<result column="goods_type" property="goodsType" />
+		<result column="order_status" property="orderStatus" />
+		<result column="create_time" property="createTime" />
+		<result column="pay_ways" property="payWays" />
+		<result column="deposit_fee" property="depositFee" />
+		<result column="delivery_type" property="deliveryType" />
+		<result column="result_f_reason" property="result_f_reason" />
+	</resultMap>
+	<!-- 根据条件获取售后列表 -->
+	<select id="findAfterSaleList" parameterType="map" resultMap="afterSaleMap">
+		SELECT 
+		tas.id,
+		tas.order_id,
+		tas.reason,
+		tas.pic_urls,
+		tas.handle_status,
+		tas.result,
+		tas.result_f_reason,
+		o. NAME,
+		o.telno,
+		o.goods_type,
+		o.order_status,
+		o.create_time,
+		ts.pay_ways,
+		ts.deposit_fee,
+		odr.delivery_type,
+		tas.delivery_id
+		FROM
+		t_after_sale tas INNER JOIN t_order o ON tas.order_id = o.order_id INNER JOIN 
+		t_trade_ser ts ON o.order_id = ts.order_id
+		left join t_order_delivery_relate odr on tas.delivery_id=odr.delivery_id AND ts.order_id = odr.order_id 
+		WHERE
+		tas.entkbn=0 and o.entkbn=0 and ts.entkbn=0 
+		<if test='orderid != null and orderid != ""'>
+			<bind name="_orderid_" value="'%' + orderid + '%'" />
+			and tas.order_id like #{_orderid_}
+		</if>
+		<if test='name != null and name != ""'>
+			<bind name="_name_" value="'%' + name + '%'" />
+			and o.name like #{_name_}
+		</if>
+		<if test='orderType != null and orderType != ""'>and o.goods_type=#{orderType}</if>
+		<if test='payStyle != null and payStyle != ""'>and ts.pay_ways=#{payStyle}</if>
+		<if test='price_h != null and price_h != ""'>and ts.deposit_fee &gt;= #{price_h}</if>
+		<if test='price_l != null and price_l != ""'>and ts.deposit_fee &lt;= #{price_l}</if>
+		<if test='startTime != null and startTime != ""'>and o.create_time &gt;= #{startTime}</if>
+		<if test='endTime != null and endTime != ""'>and o.create_time &lt;= #{endTime}</if>
+		order by tas.create_time desc limit #{page}, #{pageSize}
+	</select>
+
+</mapper> 

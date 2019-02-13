@@ -1,0 +1,194 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="dianfan.dao.mapper.factory.FactoryMapper">
+
+	<!-- 易拼resultMap -->
+	<resultMap id="factoryParameterMap" type="dianfan.entities.factory.FactoryInfo">
+		<id column="id" property="id" />
+		<result column="longitude" property="longitude" />
+		<result column="latitude" property="latitude" />
+		<result column="factory_addr" property="factoryAddr" />
+		<result column="create_time" property="createTime" />
+		<result column="create_by" property="createBy" />
+		<result column="update_by" property="updateBy" />
+		<result column="update_time" property="updateTime" />
+		<result column="entkbn" property="entkbn" />
+		<result column="version" property="version" />
+	</resultMap>
+	<!-- 工厂条数 -->
+	<select id="getFactoryNum" parameterType="string" resultType="int">
+		select 
+			count(*)
+		from
+			(select
+				flal.areacode
+			from
+				t_factory_list fl
+				left join (
+				select factory_id, group_concat(area_code) areacode from t_factory_list_area_list where entkbn = 0 group by factory_id
+				) flal on fl.id = flal.factory_id
+				left join (
+				select group_concat(admin_id) adminids, factory_id from t_factory_admin_relate group by factory_id
+				) far on far.factory_id = fl.id 
+			where
+			fl.entkbn = 0
+			)datas
+		<if test="areacode !=null and areacode !=''">
+			<bind name="_areacode" value="'%'+areacode+'%'" />
+			 where datas.areacode like #{_areacode}
+		</if>
+	</select>
+	<!-- 查询工厂列表信息 -->
+	<select id="findFactoryList" parameterType="map" resultType="dianfan.entities.factory.FactoryInfo">
+		select 
+			datas.*
+		from
+			(select
+				fl.id,
+				fl.factory_name factoryname,
+				fl.factory_addr factoryaddr,
+				fl.latitude,
+				fl.longitude,
+				fl.create_time createtime,
+				flal.areacode
+	 			,far.adminids
+			from
+				t_factory_list fl
+				left join (
+				select factory_id, group_concat(area_code) areacode from t_factory_list_area_list where entkbn = 0 group by factory_id
+				) flal on fl.id = flal.factory_id
+				left join (
+				select group_concat(admin_id) adminids, factory_id from t_factory_admin_relate group by factory_id
+				) far on far.factory_id = fl.id 
+			where
+			fl.entkbn = 0 order by fl.create_time desc  limit #{start}, #{offset}
+			)datas
+		<if test="areacode !=null and areacode !=''">
+			<bind name="_areacode" value="'%'+areacode+'%'" />
+			 where datas.areacode like #{_areacode}
+		</if>
+	</select>
+	
+	<!-- 修改工厂 -->
+	<update id="updateFactory" parameterType="dianfan.entities.factory.FactoryInfo">
+		update t_factory_list set
+		<if test="factoryName !=null"> factory_name = #{factoryName},</if>
+		<if test="factoryAddr !=null"> factory_addr = #{factoryAddr},</if>
+		<if test="latitude !=null"> latitude = #{latitude},</if>
+		<if test="longitude !=null"> longitude = #{longitude},</if>
+		<if test="latitude !=null"> latitude = #{latitude},</if>
+		update_by = #{updateBy},
+		version=version+1 where id=#{id} and version=#{version}
+	</update>
+	<!-- 修改工厂区域 -->
+	<update id="updateFactoryArea" parameterType="dianfan.entities.factory.FactoryArea">
+		update t_factory_list_area_list set
+		<if test="areaCode !=null"> area_code = #{areaCode},</if>
+		update_by = #{updateBy},
+		version=version+1 where factory_id=#{factoryId} and version=#{version}
+	</update>
+	<!-- 删除工厂 -->
+	<update id="delFactory" parameterType="map">
+		update t_factory_list set
+		entkbn=9,version=version+1,update_by=#{userid} where id in
+		<foreach collection="fversion" item="items" open="("
+			separator="," close=")">
+			#{items.id}
+		</foreach>
+		and version in
+		<foreach collection="fversion" item="items" index="index"
+			open="(" separator="," close=")">
+			#{items.version}
+		</foreach>
+	</update>
+	<!-- 删除工厂逻辑删除 -->
+	<update id="delFactoryArea" parameterType="map">
+		update t_factory_list_area_list set
+		entkbn=9,version=version+1,update_by=#{userid} where id in
+		<foreach collection="faversion" item="items" index="index"
+			open="(" separator="," close=")">
+			#{items.id}
+		</foreach>
+		and version in
+		<foreach collection="faversion" item="items" index="index"
+			open="(" separator="," close=")">
+			#{items.version}
+		</foreach>
+	</update>
+	<!-- 物理删除 -->
+	<delete id="deleteFactoryArea" parameterType="string">
+		delete from t_factory_list_area_list where factory_id = #{factoryid}
+	</delete>
+	<!-- 删除工厂管理相关表 -->
+	<delete id="deleteFactoryAdminRelate" parameterType="map">
+		delete from t_factory_admin_relate where factory_id in
+		<foreach collection="fversion" item="items" open="("
+			separator="," close=")">
+			#{items.id}
+		</foreach>
+	</delete>
+	<!-- 获取版本号以及id -->
+	<select id="findFactoryVersion" resultType="factoryInfo">
+		select id,version from t_factory_list where id in
+		<foreach collection="ids" item="items" open="(" separator=","
+			close=")">
+			#{items}
+		</foreach>
+	</select>
+	<!-- 获取版本号以及id -->
+	<select id="findFactoryAreaVersion" resultType="factoryArea">
+		select id,version from t_factory_list_area_list where factory_id in
+		<foreach collection="ids" item="items" open="(" separator=","
+			close=")">
+			#{items}
+		</foreach>
+	</select>
+	
+	<!-- 检测工厂-区域关系 -->
+	<select id="checkFactoryArea" parameterType="list" resultType="boolean">
+		select count(*) from t_factory_list_area_list where entkbn=0 and
+		<if test="factoryid != null">factory_id != #{factoryid} and</if>
+		<foreach collection="areaCodes" item="item" open="(" separator=" or " close=")">area_code=#{item}</foreach>
+	</select>
+	
+	<insert id="addFactoryArea" parameterType="factoryArea">
+		insert into t_factory_list_area_list
+		(id,factory_id,area_code,create_time,create_by,entkbn) values
+		<foreach collection="areacodes" item="item" index="index"
+			separator=",">
+			(replace(uuid(),'-',''),#{factoryId},#{item},now(),#{createBy},0)
+		</foreach>
+	</insert>
+	
+	<!-- 检测绑定管理员工厂关系 -->
+	<select id="checkBindAdminFactoryRealtion" resultType="boolean">
+		select count(*) from t_factory_admin_relate where
+		<foreach collection="adminids" item="item" open="(" separator=" or " close=")">admin_id=#{item}</foreach>
+		<if test="factoryid != null"> and factory_id != #{factoryid}</if>
+	</select>
+	
+	<!-- 绑定管理员工厂关系 -->
+	<insert id="bindAdminFactoryRealtion">
+		insert into t_factory_admin_relate (id, admin_id, factory_id) values 
+		<foreach collection="adminids" item="item" separator="," >
+			(replace(uuid(),'-',''), #{item}, #{factoryid})
+		</foreach>
+	</insert>
+</mapper>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

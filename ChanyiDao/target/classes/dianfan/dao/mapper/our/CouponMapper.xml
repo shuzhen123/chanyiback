@@ -1,0 +1,432 @@
+<?xml version="1.0" encoding="UTF-8"?>    
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"    
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="dianfan.dao.mapper.our.CouponMapper">
+	<!--设置entities类和数据库中表的字段一一对应，注意数据库字段和domain类中的字段名称不致，此处一定要！ -->
+	<resultMap id="BaseResultMap" type="dianfan.entities.Coupon">
+		<id column="id" property="id" jdbcType="VARCHAR" />
+		<result column="coupon_name" property="couponName" jdbcType="VARCHAR" />
+		<result column="coupon_num" property="couponNum" jdbcType="INTEGER" />
+		<result column="coupon_endtime" property="couponEndtime" jdbcType="TIMESTAMP" />
+		<result column="coupon_apply" property="couponApply" jdbcType="VARCHAR" />
+		<result column="coupon_type" property="couponType" jdbcType="VARCHAR" />
+		<result column="coupon_classify_id" property="couponClassifyId" jdbcType="VARCHAR" />
+		<result column="coupon_des" property="couponDes" jdbcType="VARCHAR" />
+		<result column="coupon_starttime" property="couponStarttime" jdbcType="TIMESTAMP" />
+		<result column="coupon_condtion" property="couponCondtion" jdbcType="VARCHAR" />
+		<result column="coupon_reduce_money" property="couponReduceMoney" jdbcType="VARCHAR" />
+		<result column="create_time" property="createTime" jdbcType="TIMESTAMP" />
+		<result column="create_by" property="createBy" jdbcType="VARCHAR" />
+		<result column="update_time" property="updateTime" jdbcType="TIMESTAMP" />
+		<result column="update_by" property="updateBy" jdbcType="VARCHAR" />
+		<result column="entkbn" property="entkbn" jdbcType="INTEGER" />
+		<result column="version" property="version" jdbcType="INTEGER" />
+		<result column="goods_id" property="goodsid" jdbcType="VARCHAR" />
+		<result column="store_id" property="storeid" jdbcType="VARCHAR" />
+	</resultMap>
+	<!-- 用户优惠券关系表 -->
+	<resultMap id="BaseResultMapUcRelate" type="dianfan.entities.UserCouponRelate">
+		<id column="id" property="id" jdbcType="VARCHAR" />
+		<result column="coupon_id" property="couponId" jdbcType="VARCHAR" />
+		<result column="user_id" property="userId" jdbcType="VARCHAR" />
+		<result column="user_used" property="userUsed" jdbcType="VARCHAR" />
+		<result column="draw_date" property="drawDate" jdbcType="TIMESTAMP" />
+		<result column="used_date" property="usedDate" jdbcType="TIMESTAMP" />
+		<result column="used_end_time" property="usedEndTime" jdbcType="TIMESTAMP" />
+		<result column="create_time" property="createTime" jdbcType="TIMESTAMP" />
+		<result column="create_by" property="createBy" jdbcType="VARCHAR" />
+		<result column="update_time" property="updateTime" jdbcType="TIMESTAMP" />
+		<result column="update_by" property="updateBy" jdbcType="VARCHAR" />
+		<result column="entkbn" property="entkbn" jdbcType="INTEGER" />
+		<result column="version" property="version" jdbcType="INTEGER" />
+		<result column="goods_id" property="goodsid" jdbcType="VARCHAR" />
+		<result column="store_id" property="storeid" jdbcType="VARCHAR" />
+	</resultMap>
+	  <sql id="Base_Column_List" >
+         id, coupon_name, coupon_num, coupon_endtime, coupon_apply, coupon_type, 
+         coupon_classify_id, coupon_des, coupon_starttime,coupon_condtion,coupon_reduce_money,create_time, entkbn,version, goods_id,store_id
+       </sql>
+       <!-- 用户优惠券关系 -->
+	  <sql id="Base_URColumn_List" >
+        id,coupon_id,user_used, draw_date, used_date, used_end_time
+       </sql>
+	<!-- 查询优惠券id列表 -->
+	<select id="findCouponIdList" parameterType="map" resultMap="BaseResultMapUcRelate">
+		select <include refid="Base_URColumn_List" /> from t_user_coupon_relate where user_id = #{userid} and <if test="userused==2">user_used = 0 and </if><if test="userused !=null and userused !=2">user_used = #{userused} and </if>
+		  entkbn=0 <if test="used ==null"><if test="userused !=null and userused !=2"> and draw_date &lt;= now()  and used_end_time &gt;= now() </if><if test="userused !=null and userused ==2"> and used_end_time &lt;= now() </if></if><if test="used !=null"> and draw_date &lt;= now()  and used_end_time &gt;= now() </if> order by create_time desc limit #{start},#{count}
+	</select>
+	
+	<select id="getCouponCount" parameterType="map" resultType="Integer">
+		select count(*) from t_user_coupon_relate where user_id = #{userid} and <if test="userused==2">user_used = 0 and </if><if test="userused !=null and userused !=2">user_used = #{userused} and </if>
+		  entkbn=0 <if test="used ==null"><if test="userused !=null and userused !=2"> and draw_date &lt;= now()  and used_end_time &gt;= now() </if><if test="userused !=null and userused ==2"> and used_end_time &lt;= now() </if></if><if test="used !=null"> and draw_date &lt;= now()  and used_end_time &gt;= now() </if> 
+	</select>
+	<!-- 查询优惠券列表 -->
+	<select id="findCouponList" parameterType="string" resultMap="BaseResultMap">
+		select <include refid="Base_Column_List" /> from t_coupon where id in <foreach collection="couponids" item="couponid" open="(" close=")" separator=",">
+    #{couponid}
+   </foreach>
+    order by create_time desc
+	</select>
+	<select id="getCoupon" parameterType="string" resultMap="BaseResultMap">
+		select <include refid="Base_Column_List" /> from t_coupon where id = #{couponid}
+	</select>
+	
+	<!-- 按条件统计优惠券分类 -->
+	<select id="getBgCouponNum" parameterType="map" resultType="Integer">
+	select count(*) from t_coupon where 
+		<if test="couponname !=null and couponname !=''">
+	<bind name="_couponname" value="'%'+couponname+'%'"/>
+	  coupon_name like #{_couponname} and </if>
+	<if test="coupontype !=null and coupontype !=''">  coupon_type =#{coupontype} and </if>
+	<if test="couponendtimestart !=null and couponendtimeend !=null"> (coupon_endtime &gt; #{couponendtimestart} and coupon_endtime &lt;= #{couponendtimeend}) and </if>
+	<if test="couponapply !=null and couponapply !=''"> coupon_apply =#{couponapply} and </if>
+	<if test="couponreducemoneystart !=null and couponreducemoneyend !=null"> (coupon_reduce_money between #{couponreducemoneystart} and  #{couponreducemoneyend} ) and</if>
+	<if test="couponstarttimestart !=null and couponstarttimeend !=null"> (coupon_starttime &gt; #{couponstarttimestart} and coupon_starttime &lt;= #{couponstarttimeend}) and </if>
+	<if test="createtimestart !=null and createtimeend !=null"> (create_time &gt; #{createtimestart} and create_time &lt;= #{createtimeend}) and </if>
+	 entkbn = 0 
+	</select>
+	<!-- 按条件查询优惠券分类列表 -->
+	<select id="findBgCouponList" parameterType="map"  resultMap="BaseResultMap">
+		select <include refid="Base_Column_List" /> from t_coupon where 
+		<if test="nickName !=null and nickName !=''">
+			 <bind name="_nickName" value="'%'+nickName+'%'"/>
+			 tuu.nick_name like #{_nickName} and 
+		 </if>
+		 <if test="telno !=null and telno !=''">
+			 <bind name="_telno" value="'%'+telno+'%'"/>
+			 tuu.telno like #{_telno} and 
+		 </if>
+		<if test="couponname !=null and couponname !=''">
+		<bind name="_couponname" value="'%'+couponname+'%'"/>
+		 coupon_name  like #{_couponname} and </if>
+		<if test="coupontype !=null and coupontype !=''">  coupon_type =#{coupontype} and </if>
+		<if test="couponendtimestart !=null and couponendtimeend !=null"> (coupon_endtime &gt; #{couponendtimestart} and coupon_endtime &lt;= #{couponendtimeend}) and </if>
+		<if test="couponapply !=null and couponapply !=''"> coupon_apply =#{couponapply} and </if>
+		<if test="couponreducemoneystart !=null and couponreducemoneyend !=null"> (coupon_reduce_money between #{couponreducemoneystart} and  #{couponreducemoneyend} ) and</if>
+		<if test="couponstarttimestart !=null and couponstarttimeend !=null"> (coupon_starttime &gt; #{couponstarttimestart} and coupon_starttime &lt;= #{couponstarttimeend}) and </if>
+		<if test="createtimestart !=null and createtimeend !=null"> (create_time &gt; #{createtimestart} and create_time &lt;= #{createtimeend}) and </if>
+		 entkbn = 0 
+			order by create_time desc
+			limit #{start},#{offset}
+	</select>
+	
+	
+	<!--修改优惠券  -->
+	<update id="updateBgCoupon" parameterType="dianfan.entities.Coupon">
+	 update t_coupon set 
+	 <if test="couponName !=null"> coupon_name=#{couponName},</if>
+	 <if test="couponNum !=null"> coupon_num=#{couponNum},</if>
+	 <if test="couponEndtime !=null"> coupon_endtime=#{couponEndtime},</if>
+	 <if test="couponApply !=null"> coupon_apply=#{couponApply},</if>
+     <if test="couponType !=null"> coupon_type=#{couponType},</if>
+     <if test="couponCondtion !=null"> coupon_condtion=#{couponCondtion},</if>
+     <if test="couponReduceMoney !=null"> coupon_reduce_money=#{couponReduceMoney},</if>
+     <if test="couponClassifyId !=null"> coupon_classify_id=#{couponClassifyId},</if>
+     <if test="couponDes !=null"> coupon_des=#{couponDes},</if>
+     <if test="couponStarttime !=null"> coupon_starttime=#{couponStarttime},</if>
+     <if test="goodsid !=null"> goods_id=#{goodsid},</if>
+     <if test="storeid !=null"> store_id=#{storeid},</if>
+	update_by=#{updateBy},version=version+1  
+	  where id=#{id} and version=#{version}
+	</update>
+	<!-- 删除优惠券  -->
+	<update id="delCoupons" parameterType="string">
+  	 update t_coupon set update_by=#{userid},entkbn=9,version=version+1  where id in <foreach collection="couponids" item="item" index="index" open="(" separator="," close=")">
+  	 #{item}
+  	 </foreach>
+	</update>
+	<!-- 删除用户优惠券相关表  -->
+	<update id="delUserCouponRelates" parameterType="string">
+  	 update t_user_coupon_relate set user_id=#{userid},entkbn=9,version=version+1  where coupon_id in <foreach collection="couponids" item="item" index="index" open="(" separator="," close=")">
+  	 #{item}
+  	 </foreach>
+	</update>
+	<select id="getBgCouponDetail" parameterType="string" resultMap="BaseResultMap">
+	 select <include refid="Base_Column_List" /> from t_coupon where id=#{couponid}
+	</select>
+	<insert id="addUCRelate" parameterType="map">
+	 insert into t_user_coupon_relate (id,coupon_id,user_id,user_used,used_end_time,create_time,create_by,entkbn) values <foreach collection="userids" item="item" separator=",">
+			(replace(uuid(),'-',''),#{couponid},#{item},0,#{usedendtime},now(),#{userid},0)
+		</foreach>
+	</insert>
+	<!-- 批量添加 -->
+	<insert id="batchAddUCRelate">
+	 insert into t_user_coupon_relate (id,coupon_id,user_id,user_used,used_end_time,create_time,create_by,entkbn,draw_date) values <foreach collection="list" item="item" separator="," index="index">
+			(replace(uuid(),'-',''),#{item.couponId},#{item.userId},0,#{item.usedEndTime},now(),#{item.createBy},0,now())
+		</foreach>
+	</insert>
+	
+	<select id="getBgCouponDetailNum" parameterType="map" resultType="Integer">
+	 select 
+			count(*)
+		from 
+			t_user_coupon_relate ucr inner join t_coupon cn on ucr.coupon_id=cn.id inner join t_user_userinfo tuu on tuu.id=ucr.user_id
+		where 
+		 <if test="nickName !=null and nickName !=''">
+			 <bind name="_nickName" value="'%'+nickName+'%'"/>
+			 tuu.nick_name like #{_nickName} and 
+		 </if>
+		  <if test="telno !=null and telno !=''">
+			 <bind name="_telno" value="'%'+telno+'%'"/>
+			 tuu.telno like #{_telno} and 
+		 </if>
+		 <if test="couponname !=null and couponname !=''">
+			 <bind name="_couponname" value="'%'+couponname+'%'"/>
+			 cn.coupon_name like #{_couponname} and 
+		 </if>
+		<if test="coupontype !=null">  cn.coupon_type =#{coupontype} and </if>
+		<if test="couponendtimestart !=null and couponendtimeend !=null"> (cn.coupon_endtime &gt; #{couponendtimestart} and cn.coupon_endtime &lt;= #{couponendtimeend}) and </if>
+		<if test="couponapply !=null"> coupon_apply =#{couponapply} and </if>
+		<if test="couponreducemoneystart !=null and couponreducemoneyend !=null"> (cn.coupon_reduce_money &gt; #{couponreducemoneystart} and cn.coupon_reduce_money &lt;=  #{couponreducemoneyend} ) and</if>
+		<if test="couponstarttimestart !=null and couponstarttimeend !=null"> (cn.coupon_starttime &gt; #{couponstarttimestart} and cn.coupon_starttime &lt;= #{couponstarttimeend}) and </if>
+		<if test="createtimestart !=null and createtimeend !=null"> (ucr.create_time &gt; #{createtimestart} and ucr.create_time &lt;= #{createtimeend}) and </if>
+		<if test="userused !=null"> ucr.user_used =#{userused} and </if>
+		<if test="drawdatestart !=null and drawdateend !=null"> (ucr.draw_date &gt; #{drawdatestart} and ucr.draw_date &lt;= #{drawdateend}) and </if>
+		<if test="useddatestart !=null and useddateend !=null"> (ucr.used_date &gt; #{useddatestart} and ucr.used_date &lt;= #{useddateend}) and </if>
+		<if test="usedendtimestart !=null and usedendtimeend !=null"> (ucr.used_end_time &gt; #{usedendtimestart} and ucr.used_end_time &lt;= #{usedendtimeend}) and </if>
+		 cn.entkbn = 0 and ucr.entkbn=0  and tuu.entkbn !=9  
+	</select>
+	<select id="findBgCouponDetail" parameterType="map" resultType="userCouponDetail">
+		select 
+			ucr.id,ucr.user_id userId,cn.coupon_apply couponApply,cn.coupon_classify_id couponClassifyId,cn.coupon_condtion couponCondtion,
+			cn.coupon_des couponDes,cn.coupon_endtime couponEndtime,cn.coupon_name couponName,tuu.nick_name nickName,tuu.telno,
+			cn.coupon_reduce_money couponReduceMoney,cn.coupon_starttime couponStarttime,cn.coupon_type couponType,ucr.create_time createTime,
+			ucr.draw_date drawDate,ucr.used_date usedDate,ucr.used_end_time usedEndTime,ucr.user_used userUsed,
+			cn.goods_id goodsid, cn.store_id storeid
+		from 
+			t_user_coupon_relate ucr inner join t_coupon cn on ucr.coupon_id=cn.id inner join t_user_userinfo tuu on tuu.id=ucr.user_id
+		where 
+		 <if test="nickName !=null and nickName !=''">
+			 <bind name="_nickName" value="'%'+nickName+'%'"/>
+			 tuu.nick_name like #{_nickName} and 
+		 </if>
+		  <if test="telno !=null and telno !=''">
+			 <bind name="_telno" value="'%'+telno+'%'"/>
+			 tuu.telno like #{_telno} and 
+		 </if>
+		 <if test="couponname !=null and couponname !=''">
+			 <bind name="_couponname" value="'%'+couponname+'%'"/>
+			 cn.coupon_name like #{_couponname} and 
+		 </if>
+		<if test="coupontype !=null">  cn.coupon_type =#{coupontype} and </if>
+		<if test="couponendtimestart !=null and couponendtimeend !=null"> (cn.coupon_endtime &gt; #{couponendtimestart} and cn.coupon_endtime &lt;= #{couponendtimeend}) and </if>
+		<if test="couponapply !=null"> coupon_apply =#{couponapply} and </if>
+		<if test="couponreducemoneystart !=null and couponreducemoneyend !=null"> (cn.coupon_reduce_money &gt; #{couponreducemoneystart} and cn.coupon_reduce_money &lt;=  #{couponreducemoneyend} ) and</if>
+		<if test="couponstarttimestart !=null and couponstarttimeend !=null"> (cn.coupon_starttime &gt; #{couponstarttimestart} and cn.coupon_starttime &lt;= #{couponstarttimeend}) and </if>
+		<if test="createtimestart !=null and createtimeend !=null"> (ucr.create_time &gt; #{createtimestart} and ucr.create_time &lt;= #{createtimeend}) and </if>
+		<if test="userused !=null"> ucr.user_used =#{userused} and </if>
+		<if test="drawdatestart !=null and drawdateend !=null"> (ucr.draw_date &gt; #{drawdatestart} and ucr.draw_date &lt;= #{drawdateend}) and </if>
+		<if test="useddatestart !=null and useddateend !=null"> (ucr.used_date &gt; #{useddatestart} and ucr.used_date &lt;= #{useddateend}) and </if>
+		<if test="usedendtimestart !=null and usedendtimeend !=null"> (ucr.used_end_time &gt; #{usedendtimestart} and ucr.used_end_time &lt;= #{usedendtimeend}) and </if>
+		 cn.entkbn = 0 and ucr.entkbn=0  and tuu.entkbn !=9  
+			order by ucr.create_time desc
+			limit #{start},#{offset}
+	</select>
+	<!-- 查询商品分类名称 -->
+	<select id="getGoodsClassifyName" resultType="string">
+    	SELECT GROUP_CONCAT(tgc.classify_name) FROM t_goods_classify tgc where tgc.entkbn=0 and tgc.id in 
+    	<foreach collection="ccids" item="item" open="(" separator="," close=")">
+    	#{item}
+    	</foreach>
+    	 ORDER BY tgc.sort
+	</select>
+	
+	<!-- 获取用户数量 -->
+	<select id="getUserListNum" parameterType="map" resultType="int">
+		SELECT
+			 count(*)
+		FROM
+			t_user_userinfo info LEFT JOIN
+			t_user_role role ON info.id = role.userid LEFT JOIN 
+			m_role trole ON role.roleid = trole.id
+		WHERE
+			info.entkbn != 9
+			<if test=' name != null and name != ""  ' >
+				<bind name="name_" value=" '%' + name + '%'  "/>
+				and info.nick_name like #{name_}
+			</if>
+			<if test='telno != null and telno != "" '>
+			<bind name="telno_" value=" '%' + telno + '%'  "/>
+				and info.telno like #{telno_}
+			</if>
+			<!-- 通过性别搜索 -->
+			<if test='sex != null and sex != "" '>
+				and info.sex = #{sex}
+			</if>
+			<!-- 通过区域搜索 -->
+			<if test='areacode != null and areacode != "" '>
+				and info.area_code = #{areacode}
+			</if>
+			<!-- 通过角色搜索 -->
+			<if test='role != null and role != "" '>
+				and trole.id = #{role}
+			</if>
+			<if test='source != null and source != "" '>
+				and info.source = #{source}
+			</if>
+			<if test=' starttime != null and starttime != "" and endtime != null and endtime != "" '>
+				<bind name="_starttime" value="starttime + ' 00:00:00' " />
+				<bind name="endtime_" value="endtime + ' 23:59:59' " />
+				and info.create_time between #{_starttime} and #{endtime_} 
+			</if>
+		ORDER BY info.create_time DESC
+	</select>
+	<!-- 获取用户列表 -->
+	<select id="findUserList" parameterType="map" resultType="dianfan.entities.UserInfo">
+		SELECT
+			info.id ,
+			info.union_id unionId,
+			info.wxpub_openid wxpubOpenid,
+			info.wxsmall_openid wxsmallOpenid,
+			info.nick_name nickName,
+			info.country,
+			info.sex,
+			info.avatar_url avatarUrl,
+			info.telno,
+			info.area_code areaCode,
+			info.bank_card_no bankCardNo,
+			info.bank_card_name bankCardName,
+			info.bank_short bankShort,
+			info.qr_num qrNum,
+			info.extra_id extraId,
+			info.create_time createTime,
+			info.last_money lastMoney,
+			info.source,
+			info.entkbn,
+
+			role.roleid roleid,
+			trole.role_name role
+		FROM
+			t_user_userinfo info LEFT JOIN
+			t_user_role role ON info.id = role.userid LEFT JOIN 
+			m_role trole ON role.roleid = trole.id
+		WHERE
+			info.entkbn != 9
+			<if test=' name != null and name != ""  ' >
+				<bind name="name_" value=" '%' + name + '%'  "/>
+				and info.nick_name like #{name_}
+			</if>
+			<if test='telno != null and telno != "" '>
+			<bind name="telno_" value=" '%' + telno + '%'  "/>
+				and info.telno like #{telno_}
+			</if>
+			<!-- 通过性别搜索 -->
+			<if test='sex != null and sex != "" '>
+				and info.sex = #{sex}
+			</if>
+			<!-- 通过区域搜索 -->
+			<if test='areacode != null and areacode != "" '>
+				and info.area_code = #{areacode}
+			</if>
+			<!-- 通过角色搜索 -->
+			<if test='role != null and role != "" '>
+				and trole.id = #{role}
+			</if>
+			<if test='source != null and source != "" '>
+				and info.source = #{source}
+			</if>
+			<if test=' starttime != null and starttime != "" and endtime != null and endtime != "" '>
+				<bind name="_starttime" value="starttime + ' 00:00:00' " />
+				<bind name="endtime_" value="endtime + ' 23:59:59' " />
+				and info.create_time between #{_starttime} and #{endtime_} 
+			</if>
+		ORDER BY info.create_time DESC
+	</select>
+	
+	<select id="checkEnableCoupon" resultType="boolean">
+		select 
+			count(*)
+		from
+			t_coupon
+		where 
+			store_id like concat('%', 
+				(select 
+					id
+				from 
+					t_experiencestore_apply
+				where 
+					apply_user_id=
+						(select 
+							u2.id 
+						from 
+							t_user_userinfo u1,
+							t_user_userinfo u2
+						where 
+							u1.experiencestore_qr_num=u2.qr_num and u1.id=#{userid})
+				)
+			, '%') or store_id = "" or store_id is null and 
+			id=(select 
+					coupon_id
+				from 
+					t_user_coupon_relate
+				where 
+					id=#{couponid})
+			and entkbn=0 and coupon_apply='01' and coupon_endtime > now()
+	</select>
+	
+	<select id="checkEnableSaler" resultType="boolean">
+		select 
+			count(*)
+		from
+			t_coupon
+		where 
+			store_id like concat('%', 
+			(
+				select 
+				id
+				from 
+				t_experiencestore_apply
+				where 
+				apply_user_id=
+				(
+					select 
+					upper_user_id
+					from 
+					t_user_lower_upper_relate
+					where 
+					entkbn=0 and down_user_id=
+					(select 
+						u2.id 
+					from 
+						t_user_userinfo u1,
+						t_user_userinfo u2
+					where 
+						u1.saler_qr_num=u2.qr_num and u1.id=#{userid}
+					)
+				)
+			), '%')  or store_id = "" or store_id is null and id=(select 
+					coupon_id
+				from 
+					t_user_coupon_relate
+				where 
+					id=#{couponid})
+			and entkbn=0 and coupon_apply='01' and coupon_endtime > now()
+	</select>
+	
+	<select id="findCouponClassify" parameterType="list" resultType="goodsClassify">
+		select id, classify_name classifyName from t_goods_classify where id in 
+		<foreach collection="array" item="item" open="(" separator="," close=")">#{item}</foreach>
+	</select>
+	
+	<select id="findGoods" parameterType="list" resultType="goodsModel">
+		select 
+			goods.id, goods.goods_title goodsTitle, goods.goods_title_en goodsTitleEn, goods.goods_desc goodsDesc, goods.price, pic.pic_addr picAddr
+		from 
+		t_goods_list goods left join t_goods_pics pic on goods.id=pic.goods_id
+		where 
+			pic.pic_type='01' and pic.entkbn=0 and 
+			goods.id in
+			<foreach collection="array" item="item" open="(" separator="," close=")">#{item}</foreach>
+	</select>
+	
+	<select id="findSotre" parameterType="list" resultType="store">
+		select 
+		id, apply_name applyName, city_code cityCode, apply_addr cityCodeAddr, doorhead_url doorheadUrl, 
+		business_time_start businessTimeStart, business_time_end businessTimeEnd
+		from t_experiencestore_apply where id in
+			<foreach collection="array" item="item" open="(" separator="," close=")">#{item}</foreach>
+	</select>
+	
+	
+	
+</mapper> 

@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="dianfan.dao.mapper.login.UserLoginMapper">
+	
+	<resultMap type="dianfan.entities.UserInfo" id="userinfo">
+		<id column="id" property="id"/>
+		<result column="union_id" property="unionId"/>
+		<result column="wxpub_openid" property="wxpubOpenid"/>
+		<result column="wxsmall_openid" property="wxsmallOpenid"/>
+		<result column="nick_name" property="nickName"/>
+		<result column="sex" property="sex"/>
+		<result column="avatar_url" property="avatarUrl"/>
+		<result column="telno" property="telno"/>
+		<result column="area_code" property="areaCode"/>
+		<result column="bank_card_no" property="bankCardNo"/>
+		<result column="bank_card_name" property="bankCardName"/>
+		<result column="bank_short" property="bankShort"/>
+		<result column="locked" property="locked"/>
+		<result column="pwd" property="pwd"/>
+		<result column="qr_num" property="qrNum"/>
+		<result column="extra_id" property="extraId"/>
+		<result column="create_time" property="createTime"/>
+		<result column="create_by" property="createBy"/>
+		<result column="update_time" property="updateTime"/>
+		<result column="update_by" property="updateBy"/>
+	</resultMap>
+	
+	<select id="checkUserByOpenid" parameterType="string" resultMap="">
+		select * from t_user_userinfo where wxsmall_openid = #{}
+	</select>
+
+</mapper>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

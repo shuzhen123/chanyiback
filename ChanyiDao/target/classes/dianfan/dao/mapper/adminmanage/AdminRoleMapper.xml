@@ -1,0 +1,68 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="dianfan.dao.mapper.adminmanage.AdminRoleMapper">
+	
+	<!-- 添加角色下的权限 -->
+	<insert id="addAdmiRolenPopedom" parameterType="map">
+		INSERT INTO t_role_popedom (id, roleid, popedomid, popedom) VALUES
+		<foreach collection="idList" index="index" item="item" separator=",">
+			 (replace(uuid(),'-',''), #{id} , #{item}, 1)
+		</foreach>
+	</insert>
+  
+   <!-- 获取权限下的用户 -->
+  	<select id="findUseridByrole" parameterType="list" resultType="String">
+  		SELECT adminid FROM t_admin_role WHERE roleid in
+  		<foreach collection="list" index="index" item="item" open="(" separator="," close=")">
+  			#{item}
+  		</foreach>
+  	</select>
+  	<!-- 冻结角色下的用户 -->
+  	<update id="updataFreezeAdmin" parameterType="list">
+  		UPDATE t_admin SET entkbn = 1 WHERE id in 
+  		<foreach collection="list" index="index" item="item" open="(" separator="," close=")">
+  			#{item}
+  		</foreach>
+  	</update>
+  	
+  	<!-- 解除员工和角色的关系 -->
+  	<delete id="delAdminRole" parameterType="list">
+  		DELETE FROM t_admin_role WHERE roleid in 
+  		<foreach collection="list" index="index" item="item" open="(" separator="," close=")">
+  			#{item}
+  		</foreach>
+  	
+  	</delete>
+  	<!-- 删除角色 -->
+  	<update id="delRolen" parameterType="list">
+  		UPDATE t_role SET entkbn = 9 WHERE id in
+  		<foreach collection="list" index="index" item="item" open="(" separator="," close=")">
+  			#{item}
+  		</foreach>
+  	</update>
+  	
+  	<!-- 获取角色对应的权限 -->
+  	<select id="findRolePopedom" parameterType="list" resultType="RolePopedom">
+  		SELECT roleid ,popedomid FROM t_role_popedom WHERE popedom = 1 AND roleid in 
+  		<foreach collection="list" index="index" item="item" open="(" separator="," close=")">
+  			#{item}
+  		</foreach>
+  	</select>
+</mapper>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

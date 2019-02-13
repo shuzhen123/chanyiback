@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8"?>    
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"    
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="dianfan.dao.mapper.our.FeedbackMapper">
+	<resultMap id="BaseResultMap" type="dianfan.entities.FeedBack">
+		<id column="id" property="id"/>
+		<result column="user_id" property="userId"/>
+		<result column="pic_url" property="picUrl"/>
+		<result column="telno" property="telno"/>
+		<result column="feedback_type" property="feedbackType"/>
+		<result column="content" property="content"/>
+		<result column="create_time" property="createTime"/>
+		<result column="create_by" property="createBy"/>
+		<result column="update_time" property="updateTime"/>
+		<result column="update_by" property="updateBy"/>
+		<result column="entkbn" property="entkbn"/>
+		<result column="version" property="version"/>
+	</resultMap>
+	<!-- 提交意见反馈-->
+	<insert id="addFeedback" parameterType="dianfan.entities.FeedBack">
+		insert into t_feedback (id,user_id,pic_url,telno,feedback_type,content,create_time,entkbn,create_by) values (replace(uuid(),'-',''),#{userId},#{picUrl},#{telno},#{feedbackType},#{content},now(),0,#{createBy})
+	</insert>
+</mapper> 

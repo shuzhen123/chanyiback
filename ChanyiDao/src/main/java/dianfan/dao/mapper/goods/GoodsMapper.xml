@@ -1,0 +1,313 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="dianfan.dao.mapper.goods.GoodsMapper">
+	
+	<!-- 获取商品分类信息map -->
+	<resultMap  id="goodsclassifymap" type="goodsClassify">
+		<id column="up_id" property="id"/>
+		<result column="up_name" property="classifyName"/>
+		<result column="up_name_en" property="classifyNameEn"/>
+		<result column="up_level" property="classifyLevel"/>
+		<!-- 一对多 下级商品分类 -->
+		<collection property="lowerClassify" ofType="goodsClassify">
+			<id column="low_id" property="id"/>
+			<result column="low_name" property="classifyName"/>
+			<result column="low_name_en" property="classifyNameEn"/>
+			<result column="low_level" property="classifyLevel"/>
+		</collection>
+	</resultMap>
+	<!-- 获取商品分类信息 -->
+	<select id="fildGoodsClassify" resultMap="goodsclassifymap">
+		SELECT
+			up.id up_id, up.classify_name up_name, up.classify_name_en up_name_en, up.classify_level up_level,
+			low.id low_id, low.classify_name low_name, low.classify_name_en low_name_en, low.classify_level low_level 
+		FROM
+			t_goods_classify up,
+			t_goods_classify low
+		WHERE 
+			low.classify_parentid = up.id AND up.entkbn = 0 AND low.entkbn = 0
+		ORDER BY up.create_time , low.create_time
+	</select>
+	
+	<!-- 获取用户下的商品列表 -->
+	<select id="findGoodsidsByUserid" parameterType="string" resultType="string">
+		select 
+			gu.goods_id
+		from 
+			t_goods_list gl,
+			t_goods_user gu
+		where 
+			gl.id=gu.goods_id and 
+			gu.user_id=#{userid} and
+			gu.entkbn=0 and gl.entkbn=0 and gl.upperlower=1
+	</select>
+	
+	<!-- 获取满足商品属性的商品 -->
+	<select id="findGoodsByAttr" parameterType="joinGoods" resultType="goodsAttr">
+		select 
+			goodsid id, group_concat(attributes_id) paramName
+		from 
+			t_goods_attr_releate 
+		where 
+			<if test="goodsids != null and goodsids.size > 0">
+				<foreach collection="goodsids" item="item" open="(" separator=" or " close=")">goodsid=#{item}</foreach> and
+			</if>
+			<foreach collection="attr_arr" item="item" open="(" separator=" or " close=")">attributes_id=#{item}</foreach>
+			group by goodsid
+	</select>
+	
+	<!-- 获取商品属性列表 -->
+	<select id="findGoodsFiltrate" resultType="goodsAttr">
+		select
+			distinct ga.id, ga.param_key paramKey, ga.param_name paramName
+		from 
+			t_goods_attr_releate gar,
+			t_goods_attributes ga
+		where 
+			gar.attributes_id=ga.id and gar.goodsid in (
+				select 
+					id
+				from 
+					t_goods_list
+				where 
+					upperlower=1 and entkbn=0 
+					<if test='easySpelling == 1'>
+						<!-- 易拼 -->
+						and is_staff_easy_spelling=1
+					</if>
+					<if test='easySpelling != 1'>
+						<!-- 非易拼 -->
+						and goods_classify_id=#{classifyid}
+					</if>
+			)
+	</select>
+	
+	<!--  获取商品数量  -->
+	<select id="findGoodsCount" parameterType="joinGoods" resultType="int">
+		select
+			count(*)
+		from 
+			t_goods_list goods 
+			<if test='sort == "1"'>
+				<!-- 按自定义排序 -->
+				join t_goods_user guser on goods.id = guser.goods_id
+			</if>
+			left join t_goods_pics pic on goods.id=pic.goods_id
+		where 
+			<if test="goodsids != null">
+				<foreach collection="goodsids" item="item" open="(" separator=" or " close=")">goods.id=#{item}</foreach> and
+				
+			</if>
+			<if test='sort == "1"'>
+				guser.user_id=#{userid} and 
+			</if>
+			<if test='classifyid != null and classifyid != ""'>
+				<!-- 分类查询 -->
+				goods.goods_classify_id = #{classifyid} and 
+			</if>
+			<if test='pricegt != null and pricegt != ""'>
+				<!-- 价格筛选 下限 -->
+				goods.price &gt;= #{pricegt} and 
+			</if>
+			<if test='pricelt != null and pricelt != ""'>
+				<!-- 价格筛选 上限 -->
+				goods.price &lt;= #{pricelt} and 
+			</if>
+			goods.is_easy_spelling=#{spelling} and goods.entkbn=0 and goods.upperlower=1 and pic.pic_type='01' and pic.pic_pc_mobile='02' and pic.entkbn=0
+	</select>
+	<!-- 获取商品列表map -->
+	<resultMap id="goodsListMap" type="goodsList">
+		<id column="id" property="id"/>
+		<result column="goods_title" property="goodsTitle"/>
+		<result column="is_easy_spelling" property="isEasySpelling"/>
+		<result column="goods_title_en" property="goodsTitleEn"/>
+		<result column="goods_desc" property="goodsDesc"/>
+		<result column="price" property="price"/>
+		<result column="pic_addr" property="picAddr"/>
+	</resultMap>
+	<!-- 获取商品列表 -->
+	<select id="findGoodsList" parameterType="joinGoods" resultMap="goodsListMap">
+		select
+			goods.id, goods.goods_title, goods.is_easy_spelling, goods.goods_title_en, goods.goods_desc, goods.price, pic.pic_addr
+		from 
+			t_goods_list goods 
+			<if test='sort == "1"'>
+				<!-- 按自定义排序 -->
+				join t_goods_user guser on goods.id = guser.goods_id
+			</if>
+			left join t_goods_pics pic on goods.id=pic.goods_id
+		where 
+			<if test="goodsids != null">
+				<foreach collection="goodsids" item="item" open="(" separator=" or " close=")">goods.id=#{item}</foreach> and
+			</if>
+			<if test='sort == "1"'>
+				guser.user_id=#{userid} and 
+			</if>
+			<if test='classifyid != null and classifyid != ""'>
+				<!-- 分类查询 -->
+				goods.goods_classify_id = #{classifyid} and 
+			</if>
+			<if test='pricegt != null and pricegt != ""'>
+				<!-- 价格筛选 下限 -->
+				goods.price &gt;= #{pricegt} and 
+			</if>
+			<if test='pricelt != null and pricelt != ""'>
+				<!-- 价格筛选 上限 -->
+				goods.price &lt;= #{pricelt} and 
+			</if>
+			goods.is_easy_spelling=#{spelling} and goods.entkbn=0 and goods.upperlower=1 and pic.pic_type='01' and pic.pic_pc_mobile='02' and pic.entkbn=0
+			<if test='all == null or all != "1"'>
+				<!-- 非综合排序 -->
+				<trim prefix="order by" suffixOverrides=",">
+					<!-- 按销量排序 -->
+					<if test='sale == "1"'>goods.sales_count desc,</if>
+					<!-- 按最新排序 -->
+					<if test='news == "1"'>goods.create_time desc,</if>
+					<!-- 按自定义排序 -->
+					<if test='sort == "1"'>guser.sort desc,</if>
+					<!-- 按价格排序 -->
+					<choose>
+						<when test='price == "1"'>goods.price asc,</when>
+						<when test='price == "2"'>goods.price desc,</when>
+					</choose>
+				</trim>
+			</if>
+			limit #{pagestart}, #{pagesize}
+	</select>
+	
+	<!-- 商品详情map -->
+	<resultMap type="dianfan.entities.goods.GoodsModels" id="getGoodsDetailsmap">
+		<id column="id" property="id"/>
+		<result column="goods_title" property="goodsTitle"/>
+		<result column="goods_title_en" property="goodsTitleEn"/>
+		<result column="goods_classify_id" property="goodsClassifyId"/>
+		
+		<result column="is_easy_spelling" property="isEasySpelling"/><!-- 是否是易拼商品 0 不是/ 1是 -->
+		<result column="price_easy_spelling" property="priceEasySpelling"/><!-- 易拼拼团显示的商品价格  -->
+		<result column="goods_desc" property="goodsDesc"/>
+		<result column="price" property="price"/>
+		<result column="goodsThumbnail" property="goodsThumbnail"/><!-- 商品缩略图     一个商品只有一个缩略图   -->
+		<!-- 一对多 商品的图片 -->
+		<collection property="goodsPics" ofType="dianfan.entities.goods.GoodsPics">
+			<id column="pic_id" property="picId"/>
+			<result column="pic_addr" property="picAddr"/>
+		</collection>
+		<!-- 一对多  详情图 -->
+		<collection property="goodsDetails" ofType="dianfan.entities.goods.GoodsPicsQx">
+			<id column="xqpic_id" property="picId"/>
+			<result column="xqpic_addr" property="picAddr"/>
+		</collection>
+	</resultMap>
+	
+	<!-- 获取商品的详情 -->
+	<select id="getGoodsDetails" parameterType="map" resultMap="getGoodsDetailsmap">
+		SELECT DISTINCT
+			list.id, list.goods_title goods_title, list.goods_title_en goods_title_en, list.goods_desc goods_desc, list.goods_classify_id,
+			list.is_easy_spelling is_easy_spelling, list.price_easy_spelling price_easy_spelling, 
+			list.price price, 
+			pic.pic_id,
+			pic.pic_addr pic_addr, 
+		
+			xq.pic_id xqpic_id,
+			xq.pic_addr xqpic_addr, 
+			
+			suo.pic_addr goodsThumbnail,
+			<if test='userid != "/" '>
+			IF(flag.collectFlag is  null ,0,1) collectFlag
+			</if> 
+			<if test='userid == "/" '>0 collectFlag </if>
+		FROM
+			t_goods_list list
+			LEFT JOIN 
+			(SELECT 
+				pic_id, goods_id , pic_addr from t_goods_pics 
+			 WHERE 
+			 	goods_id = #{goodsid} AND pic_pc_mobile = 02 AND pic_type = 02 AND entkbn = 0 ORDER BY pic_sort DESC) pic 
+			ON list.id = pic.goods_id 
+			LEFT JOIN 
+			(SELECT 
+				pic_id, goods_id , pic_addr from t_goods_pics 
+			 WHERE 
+			 	goods_id = #{goodsid} AND pic_pc_mobile = 02 AND pic_type = 01 AND entkbn = 0 ORDER BY pic_sort DESC) suo 
+			ON list.id  = suo.goods_id 
+			
+			LEFT JOIN 
+			(SELECT 
+				pic_id, goods_id , pic_addr from t_goods_pics 
+			 WHERE 
+			 	goods_id = #{goodsid} AND pic_pc_mobile = 02 AND pic_type = 03 AND entkbn = 0 ORDER BY pic_sort DESC) xq 
+			ON list.id  = xq.goods_id 
+			
+			<if test='userid !="/" '>
+				LEFT JOIN
+						( SELECT goods_id ,count(*) collectFlag FROM t_user_collection 
+							WHERE 
+								goods_id = #{goodsid} AND 
+								user_id = #{userid} AND 
+								entkbn = 0
+						) flag ON list.id = flag.goods_id
+			</if>
+			
+		WHERE 
+			list.id = #{goodsid}  AND list.upperlower = 1 AND list.entkbn = 0
+	</select>
+	
+	<!-- 添加商品收藏 -->
+	<insert id="addGoodsFavorites" parameterType="map">
+		insert into t_user_collection (id, goods_id, user_id) values
+		<foreach item="item" index="index" collection="goodids" separator=","  >  
+			(replace(uuid(),'-',''), #{item}, #{userid})
+		</foreach>
+	</insert>
+	
+	<!-- 查询商品是否被收藏过 -->
+	<select id="checkGoodsFavorites" parameterType="map" resultType="string">
+	 	SELECT goods_id FROM t_user_collection WHERE user_id = #{userid} AND entkbn=0 and goods_id in
+	 	<foreach item="item" index="index" collection="goodids" open="(" separator="," close=")" >  
+			#{item}
+		</foreach>
+	</select>
+	
+	<!-- 获取商品标签的表map -->
+	<resultMap type="dianfan.entities.goods.GoodsLabels" id="goodsLabelsmap">
+		<id column="id" property="id"/>
+		<result column="label_name" property="labelName"/>
+	</resultMap>
+	<!-- 获取商品的id和名称 -->
+	<select id="fildGoodsLabels" resultMap="goodsLabelsmap">
+		select id, CONCAT(label_name,",") label_name FROM t_goods_labels WHERE entkbn = 0
+	</select>
+	
+	<!-- 获取用户对应的标签id map -->
+	<resultMap type="dianfan.entities.goods.GoodsListLabels" id="goodsListLabelsmap">
+		<id column="id" property="id"/>
+		<result column="label_id" property="labelId"/>
+	</resultMap>
+	<!-- 获取用户对应的标签id -->
+	<select id="fildGoodsListLabels" parameterType="string" resultMap="goodsListLabelsmap">
+		SELECT id,label_id from t_goods_list_labels where goods_id = #{goodsid}
+	</select>
+
+	<!-- 商品收藏数量+1 -->
+	<update id="goodsCollectionNumInc" parameterType="list">
+		update t_goods_list set collection_num=collection_num+1 where 
+		<foreach collection="list" item="item" separator=" or ">id=#{item}</foreach>
+	</update>
+</mapper>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

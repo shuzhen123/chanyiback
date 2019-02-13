@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8"?>    
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"    
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="dianfan.dao.mapper.order.GuidePriceMapper">
+<!-- 获取普通商品信息 -->
+<select id="findGoodsInfo" parameterType="list" resultType="goods">
+  select price,spg_sale_discount spgSaleDiscount,exp_sale_discount expSaleDiscount,cps_sale_discount cpsSaleDiscount  from t_goods_list where id in 
+  <foreach collection="goodsids" item="items" open="(" separator="," close=")">
+   #{items}
+  </foreach>
+</select>
+<!-- 获取不同规格商品信息 -->
+<select id="findGoodsPrices" parameterType="list" resultType="goodsPriceModel">
+  select tgp.price,tgl.spg_sale_discount spgSaleDiscount,tgl.exp_sale_discount expSaleDiscount,tgl.cps_sale_discount cpsSaleDiscount from t_goods_price tgp inner join t_goods_list tgl on tgp.goods_id=tgl.id where tgp.id in 
+  <foreach collection="goodspriceids" item="items" open="(" separator="," close=")">
+   #{items}
+  </foreach>
+</select>
+</mapper>

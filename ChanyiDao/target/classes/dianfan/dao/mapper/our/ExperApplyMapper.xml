@@ -1,0 +1,157 @@
+<?xml version="1.0" encoding="UTF-8"?>    
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"    
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="dianfan.dao.mapper.our.ExperApplyMapper">
+	<resultMap id="BaseResultMap" type="dianfan.entities.ExperiencestoreApply">
+		<id column="id" property="id" />
+		<result column="status" property="status" />
+		<result column="apply_name" property="applyName" />
+		<result column="apply_phone_num" property="applyPhoneNum" />
+		<result column="apply_addr" property="applyAddr" />
+		<result column="longitude" property="longitude" />
+		<result column="latitude" property="latitude" />
+		
+		<result column="area" property="area" />
+		<result column="doorhead_url" property="doorheadUrl" />
+		<result column="inner_url00" property="innerUrl00" />
+		<result column="inner_url01" property="innerUrl01" />
+		<result column="business_licence_url" property="businessLicenceUrl" />
+		<result column="business_weekly_start" property="businessWeeklyStart" />
+		<result column="business_weekly_end" property="businessWeeklyEnd" />
+		<result column="business_time_end" property="businessTimeEnd" />
+		<result column="business_time_start" property="businessTimeStart" />
+		
+		<result column="apply_user_id" property="applyUserId" />
+		<result column="create_time" property="createTime" />
+		<result column="create_by" property="createBy" />
+		<result column="update_time" property="updateTime" />
+		<result column="update_by" property="updateBy" />
+		<result column="entkbn" property="entkbn" />
+		<result column="dev_ways" property="devWays" />
+		<result column="version" property="version" />
+	</resultMap>
+	<resultMap id="BaseResultMapEac" type="dianfan.entities.ExperiencestoreApplyClassify">
+		<id column="id" property="id" />
+		<result column="goods_classify_id" property="goodsClassifyId" />
+		<result column="experiencestore_apply_id" property="experiencestoreApplyId" />
+		<result column="create_time" property="createTime" />
+		<result column="create_by" property="createBy" />
+		<result column="update_time" property="updateTime" />
+		<result column="update_by" property="updateBy" />
+		<result column="entkbn" property="entkbn" />
+		<result column="version" property="version" />
+	</resultMap>
+		<resultMap id="BaseResultMapRole" type="dianfan.entities.role.Role">
+		<id column="id" property="id" />
+		<result column="role_distinguish" property="roleDistinguish" />
+		<result column="role_name" property="roleName" />
+		<result column="create_time" property="createTime" />
+		<result column="role_description" property="roleDescription" />
+		<result column="sale_discount" property="saleDiscount" />
+		<result column="entkbn" property="entkbn" />
+	</resultMap>
+	<!-- 添加体验店申请 -->
+	<insert id="addExperApply" parameterType="dianfan.entities.ExperiencestoreApply">
+		insert into t_experiencestore_apply
+		(id,status,apply_addr,apply_phone_num,area,doorhead_url,inner_url00,inner_url01,business_licence_url,apply_user_id,create_time,entkbn,create_by,apply_current_business,dev_ways,apply_name,city_code,latitude,longitude,business_weekly_start,business_weekly_end,business_time_end,business_time_start)
+		values
+		(#{id},#{status},#{applyAddr},#{applyPhoneNum},#{area},#{doorheadUrl},#{innerUrl00},#{innerUrl01},#{businessLicenceUrl},#{applyUserId},now(),0,#{createBy},#{applyCurrentBusiness},'03',#{applyName},#{cityCode},#{latitude},#{longitude},#{businessWeeklyStart},#{businessWeeklyEnd},#{businessTimeEnd},#{businessTimeStart})
+	</insert>
+	<update id="updateExperApply" parameterType="dianfan.entities.ExperiencestoreApply">
+		update t_experiencestore_apply set  apply_addr=#{applyAddr},apply_phone_num=#{applyPhoneNum},area=#{area},doorhead_url=#{doorheadUrl},inner_url00=#{innerUrl00},inner_url01=#{innerUrl01},business_licence_url=#{businessLicenceUrl},update_by=#{updateBy},apply_current_business=#{applyCurrentBusiness},apply_name=#{applyName},city_code=#{cityCode},longitude=#{longitude},latitude=#{latitude},business_weekly_start=#{businessWeeklyStart},business_weekly_end=#{businessWeeklyEnd},business_time_end=#{businessTimeEnd},business_time_start=#{businessTimeStart},create_time=now(),version=version+1 where apply_user_id=#{applyUserId}  and version=#{version}
+	</update>
+	<!-- 体验店申请审批 -->
+	<update id="updateExpereStatus" parameterType="dianfan.entities.ExperiencestoreApply">
+		update t_experiencestore_apply set update_by=#{updateBy},status=#{status},
+		<if test="fReason !=null and fReason !=''">f_reason=#{fReason},</if>
+		<if test="cityCode !=null and cityCode !=''">city_code=#{cityCode},</if>
+		<if test="applyName !=null and applyName !=''">apply_name=#{applyName},</if>
+		<if test="applyAddr !=null and applyAddr !=''">apply_addr=#{applyAddr},</if>
+		<if test="applyPhoneNum !=null and applyPhoneNum !=''">apply_phone_num=#{applyPhoneNum},</if>
+		<if test="area !=null and area !=''">area=#{area},</if>
+		<if test="doorheadUrl !=null and doorheadUrl !=''">doorhead_url=#{doorheadUrl},</if>
+		<if test="innerUrl00 !=null and innerUrl00 !=''">inner_url00=#{innerUrl00},</if>
+		<if test="innerUrl01 !=null and innerUrl01 !=''">inner_url01=#{innerUrl01},</if>
+		<if test="businessLicenceUrl !=null and businessLicenceUrl !=''">business_licence_url=#{businessLicenceUrl},</if>
+		<if test="applyCurrentBusiness !=null and applyCurrentBusiness !=''">apply_current_business=#{applyCurrentBusiness},</if>
+		<if test="businessWeeklyStart !=null and businessWeeklyStart !=''">business_weekly_start=#{businessWeeklyStart},</if>
+		<if test="businessWeeklyEnd !=null and businessWeeklyEnd !=''">business_weekly_end=#{businessWeeklyEnd},</if>
+		<if test="businessTimeEnd !=null and businessTimeEnd !=''">business_time_end=#{businessTimeEnd},</if>
+		<if test="businessTimeStart !=null and businessTimeStart !=''">business_time_start=#{businessTimeStart},</if>
+		<if test="longitude !=null and longitude !=''">longitude=#{longitude},</if>
+		<if test="latitude !=null and latitude !=''">latitude=#{latitude},</if>
+		version=version+1 where id=#{id}  and version=#{version}
+	</update>
+	<!-- 添加体验店品类 -->
+	<insert id="addExperApplyClassify" parameterType="dianfan.entities.ExperiencestoreApplyClassify">
+		insert into t_experiencestore_apply_classify
+		(id,goods_classify_id,experiencestore_apply_id,create_time,entkbn,create_by) values  
+		<foreach collection="gcid" item="item" index="index" separator=",">
+		(replace(uuid(),'-',''),#{item},#{experiencestoreApplyId},now(),0,#{createBy})
+		</foreach>
+	</insert>
+	<!-- 修改体验店品类 -->
+	<update id="updateExperApplyClassify" parameterType="dianfan.entities.ExperiencestoreApplyClassify">
+		update  t_experiencestore_apply_classify set goods_classify_id=#{goodsClassifyId}  where experiencestore_apply_id = #{experiencestoreApplyId}
+	</update>
+	  <select id="getExperApply" parameterType="string" resultType="int">
+	   select count(*) from t_experiencestore_apply where apply_user_id = #{applyuserid} and entkbn=0
+	</select>
+	  <select id="getExperApplyByPhone" parameterType="string" resultType="int">
+	   select count(*) from t_experiencestore_apply where apply_phone_num = #{phoneno} and entkbn=0
+	</select>
+		<update id="updateExperApplyRole" parameterType="userRole">
+		update t_user_role set roleid = #{roleid},descption = #{descption} where userid=#{userid}
+	</update>
+	<select id="getUserRole" parameterType="string" resultMap="BaseResultMapRole">
+	select id,role_distinguish,role_name from m_role where  entkbn=0 and role_distinguish = #{roledistinguish}
+	</select>
+	<!-- 统计体验店 -->
+	<select id="getExperApplyNum" parameterType="dianfan.entities.ExperiencestoreApply"  resultType="int">
+	select count(tea.id) from t_experiencestore_apply tea where 
+	<if test="status !='' and status !=null"> tea.status=#{status} and </if>
+	<if test="applyName !='' and applyName !=null"> 
+	<bind name="_applyName" value="'%'+applyName+'%'"/>
+	tea.apply_name like #{_applyName} and </if>
+	<if test="cityCode !='' and cityCode !=null"> tea.city_code=#{cityCode} and </if>
+	<if test="applyPhoneNum !='' and applyPhoneNum !=null"> 
+	<bind name="_applyPhoneNum" value="'%'+applyPhoneNum+'%'"/>
+	 tea.apply_phone_num like #{_applyPhoneNum} and </if>
+	<if test="applyCurrentBusiness !='' and applyCurrentBusiness !=null"> 
+	 <bind name="_applyCurrentBusiness" value="'%'+applyCurrentBusiness+'%'"/>
+	 tea.apply_current_business like #{_applyCurrentBusiness} and </if>
+	<if test="areastart !='' and areaend !='' and areastart !=null and areaend !=null"> (tea.area between #{areastart} and  #{areaend} ) and </if>
+	<if test="areastart !='' and areaend =='' and areastart !=null and areaend ==null"> tea.area &gt; #{areastart} and </if>
+	<if test="areastart =='' and areaend !='' and areastart ==null and areaend !=null"> tea.area &lt;= #{areaend} and  </if>
+	<if test="createTimeStart !='' and createTimeStart !=null and createTimeEnd !='' and createTimeEnd !=null"> (tea.create_time &gt; #{createTimeStart} and tea.create_time &lt;= #{createTimeEnd} ) and </if>
+	<if test="createTimeStart !='' and createTimeStart !=null and createTimeEnd =='' and createTimeEnd==null"> tea.create_time &gt; #{createTimeStart} and </if>
+	<if test="createTimeStart =='' and createTimeStart==null and createTimeEnd !='' and createTimeEnd !=nulll"> tea.create_time &lt;= #{createTimeEnd} and  </if>
+	 tea.entkbn=0 
+	</select>
+	<!-- 获取体验店列表 -->
+	<select id="findBgExperApplyList" parameterType="dianfan.entities.ExperiencestoreApply" resultType="dianfan.entities.ExperiencestoreApply">
+	select tea.id,tea.apply_name applyName,tea.city_code cityCode,tea.apply_phone_num applyPhoneNum,tea.apply_addr applyAddr,tea.status,tea.f_reason fReason,tea.longitude,tea.latitude,tea.area,tea.doorhead_url doorheadUrl,tea.inner_url00 innerUrl00,tea.inner_url01 innerUrl01,tea.business_licence_url businessLicenceUrl,tea.business_weekly_start businessWeeklyStart,tea.business_weekly_end businessWeeklyEnd,tea.business_time_end businessTimeEnd,tea.business_time_start businessTimeStart,tea.handle_idcard handleIdcard,tea.apply_user_id applyUserId,tea.apply_current_business applyCurrentBusiness,tea.create_time createTime,tea.dev_ways devWays,tuu.nick_name nickName from t_experiencestore_apply tea left join t_user_userinfo tuu on tuu.id=tea.apply_user_id  where 
+	<if test="status !='' and status !=null"> tea.status=#{status} and </if>
+	<if test="applyName !='' and applyName !=null"> 
+	<bind name="_applyName" value="'%'+applyName+'%'"/>
+	tea.apply_name like #{_applyName} and </if>
+	<if test="cityCode !='' and cityCode !=null"> tea.city_code=#{cityCode} and </if>
+	<if test="applyPhoneNum !='' and applyPhoneNum !=null"> 
+	<bind name="_applyPhoneNum" value="'%'+applyPhoneNum+'%'"/>
+	 tea.apply_phone_num like #{_applyPhoneNum} and </if>
+	<if test="applyCurrentBusiness !='' and applyCurrentBusiness !=null"> 
+	 <bind name="_applyCurrentBusiness" value="'%'+applyCurrentBusiness+'%'"/>
+	 tea.apply_current_business like #{_applyCurrentBusiness} and </if>
+	<if test="areastart !='' and areaend !='' and areastart !=null and areaend !=null"> (tea.area between #{areastart} and  #{areaend} ) and </if>
+	<if test="areastart !='' and areaend =='' and areastart !=null and areaend ==null"> tea.area &gt; #{areastart} and </if>
+	<if test="areastart =='' and areaend !='' and areastart ==null and areaend !=null"> tea.area &lt;= #{areaend} and  </if>
+	<if test="createTimeStart !='' and createTimeStart !=null and createTimeEnd !='' and createTimeEnd !=null"> (tea.create_time &gt; #{createTimeStart} and tea.create_time &lt;= #{createTimeEnd} ) and </if>
+	<if test="createTimeStart !='' and createTimeStart !=null and createTimeEnd =='' and createTimeEnd==null"> tea.create_time &gt; #{createTimeStart} and </if>
+	<if test="createTimeStart =='' and createTimeStart==null and createTimeEnd !='' and createTimeEnd !=nulll"> tea.create_time &lt;= #{createTimeEnd} and  </if>
+	 tea.entkbn=0  order by tea.status='03' desc, tea.create_time desc limit #{start},#{offset}
+	</select>
+	<!-- 获取体验店 -->
+	<select id="getBgExperApply" parameterType="string" resultType="dianfan.entities.ExperiencestoreApply">
+	select tea.id,tea.apply_name applyName,tea.city_code cityCode,tea.apply_phone_num applyPhoneNum,tea.apply_addr applyAddr,tea.status,tea.f_reason fReason,tea.longitude,tea.latitude,tea.area,tea.doorhead_url doorheadUrl,tea.inner_url00 innerUrl00,tea.inner_url01 innerUrl01,tea.business_licence_url businessLicenceUrl,tea.business_weekly_start businessWeeklyStart,tea.business_weekly_end businessWeeklyEnd,tea.business_time_end businessTimeEnd,tea.business_time_start businessTimeStart,tea.handle_idcard handleIdcard,tea.apply_user_id applyUserId,tea.apply_current_business applyCurrentBusiness,tea.create_time createTime from t_experiencestore_apply tea   where tea.id=#{id}
+	</select>
+</mapper> 

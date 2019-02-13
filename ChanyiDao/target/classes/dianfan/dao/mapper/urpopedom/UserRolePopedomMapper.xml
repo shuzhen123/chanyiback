@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="dianfan.dao.mapper.urpopedom.UserRolePopedomMapper">
+	<select id="getUrpopedomNum" resultType="Integer">
+			SELECT count(*) FROM t_popedom
+	</select>
+	<select id="findUrpopedomList"  resultType="userRolePopedomModel">
+		SELECT
+        tp.popedomid,
+				tp.popedomname,
+				tp.popedomfatherid,
+				tp.popedomurl,
+        tp.sort,
+        tp.kind
+		FROM t_popedom tp WHERE kind='02' ORDER BY sort 
+	</select>
+	<!--  修改员工角色权限 -->
+	<insert id="updateBgUserRolePopedom" parameterType="map">
+	 insert into t_m_role_popedom (id,roleid,popedomid,popedom) values 
+	 <foreach collection="popedomids" item="popedomid" separator=",">(replace(uuid(),'-',''),#{roleid},#{popedomid},#{popedom})
+	 </foreach>
+	</insert>
+</mapper>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

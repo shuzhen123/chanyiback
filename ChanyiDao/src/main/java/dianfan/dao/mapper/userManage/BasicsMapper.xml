@@ -1,0 +1,57 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="dianfan.dao.mapper.userManage.BasicsMapper">
+	
+	<!-- 权限返回map -->
+	<resultMap type="dianfan.entities.user.AdminPopedoms" id="adminPopedomsmap">
+		<id column="fpopedomid" property="popedomid"/>
+		<result column="fpopedomname" property="popedomname"/>
+		<result column="fpopedomurl" property="popedomurl"/>
+		<result column="fsort" property="sort"/>
+		<!-- 父权限下的子权限 -->
+		<collection property="lowPopedom" ofType="dianfan.entities.user.AdminPopedoms">
+			<id column="lpopedomid" property="popedomid"/>
+			<result column="lpopedomname" property="popedomname"/>
+			<result column="lpopedomurl" property="popedomurl"/>
+			<result column="lsort" property="sort"/>
+		</collection>
+	</resultMap>
+	<!-- 获取权限列表 -->
+	<select id="findPopedomList" resultMap="adminPopedomsmap">
+		SELECT
+			fath.popedomid fpopedomid, fath.popedomname fpopedomname, fath.popedomurl fpopedomurl, fath.sort fsort,
+			low.popedomid lpopedomid, low.popedomname lpopedomname,low.popedomurl lpopedomurl,low.sort lsort
+		FROM
+			t_popedom fath
+		LEFT JOIN t_popedom low ON low.popedomfatherid = fath.popedomid
+		WHERE fath.kind = 01 
+		ORDER BY fath.sort,low.sort
+	</select>
+
+	<!-- 删除权限 自用 -->
+	<delete id="delAdminPopedoms" parameterType="map">
+		DELETE FROM t_popedom WHERE popedomid In
+		<foreach collection="list" index="index" item="item" open="(" separator="," close=")">
+			#{item}
+		</foreach>
+	</delete>
+	
+
+</mapper>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

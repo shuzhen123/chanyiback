@@ -1,0 +1,98 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="dianfan.dao.mapper.goods.GoodsApplyMapper">
+	<!-- 根据筛选条件获取商品申请数量 -->
+	<select id="getGoodsApplyCountByParam" resultType="int">
+		select 
+			count(*)
+		from
+			t_goods_apply apply
+			left join t_user_userinfo applyer on apply.apply_staff_id=applyer.id,
+			t_goods_list goods
+			left join (select goods_id, pic_addr from t_goods_pics where pic_type='01' and pic_pc_mobile='02' and entkbn=0) pic on pic.goods_id=goods.id,
+			t_user_userinfo staff,
+			t_user_role urole,
+			m_role role
+		where 
+			apply.staff_id=urole.userid and urole.roleid=role.id and
+			apply.entkbn=0 and goods.entkbn!=9 and staff.entkbn!=9 and apply.goods_id=goods.id and apply.staff_id=staff.id
+			<if test='applyStatus != null'>
+				<!-- 申请状态 -->
+				and apply.apply_status=#{applyStatus}
+			</if>
+			<if test='startTime != null'>
+				<!-- 起始时间 -->
+				<bind name="startTime_" value="startTime + ' 00:00:00'"/>
+				and apply.create_time &gt;= #{startTime_}
+			</if>
+			<if test='endTime != null'>
+				<!-- 截止时间 -->
+				<bind name="endTime_" value="endTime + ' 23:59:59'"/>
+				and apply.create_time &lt;= #{endTime_}
+			</if>
+	</select>
+	
+	<resultMap type="goodsApply" id="goodsApplyMap">
+		<id column="id" property="id"/>
+		<result column="apply_status" property="applyStatus"/>
+		<result column="remark" property="remark"/>
+		<result column="create_time" property="createTime"/>
+		<result column="staff_id" property="staffid"/>
+		<result column="staffName" property="staffName"/>
+		<result column="role_name" property="roleName"/>
+		<result column="apply_staff_id" property="applyStaffid"/>
+		<result column="applyerName" property="applyStaffName"/>
+		<result column="goods_id" property="goodsid"/>
+		<result column="goods_title" property="goodsName"/>
+		<result column="pic_addr" property="goodsPic"/>
+	</resultMap>
+	<!-- 根据筛选条件获取商品申请列表 -->
+	<select id="findGoodsApplyListByParam" resultMap="goodsApplyMap">
+		select 
+			apply.id, apply.apply_status, apply.remark, apply.create_time, apply.staff_id, 
+			staff.nick_name staffName,
+			role.role_name,
+			apply.apply_staff_id, 
+			applyer.nick_name applyerName,
+			apply.goods_id,
+			goods.goods_title,
+			pic.pic_addr
+		from
+			t_goods_apply apply
+			left join t_user_userinfo applyer on apply.apply_staff_id=applyer.id,
+			t_goods_list goods
+			left join (select goods_id, pic_addr from t_goods_pics where pic_type='01' and pic_pc_mobile='02' and entkbn=0) pic on pic.goods_id=goods.id,
+			t_user_userinfo staff,
+			t_user_role urole,
+			m_role role
+		where 
+			apply.staff_id=urole.userid and urole.roleid=role.id and
+			apply.entkbn=0 and goods.entkbn!=9 and staff.entkbn!=9 and apply.goods_id=goods.id and apply.staff_id=staff.id
+			<if test='applyStatus != null'>
+				<!-- 申请状态 -->
+				and apply.apply_status=#{applyStatus}
+			</if>
+			<if test='startTime != null'>
+				<!-- 起始时间 -->
+				<bind name="startTime_" value="startTime + ' 00:00:00'"/>
+				and apply.create_time &gt;= #{startTime_}
+			</if>
+			<if test='endTime != null'>
+				<!-- 截止时间 -->
+				<bind name="endTime_" value="endTime + ' 23:59:59'"/>
+				and apply.create_time &lt;= #{endTime_}
+			</if>
+			order by apply.create_time desc
+			limit #{pageStart}, #{pageSize}
+	</select>
+	
+	<!-- 商品申请审批 -->
+	<update id="goodsApplyApprove">
+		update t_goods_apply set 
+			apply_status=#{applyStatus}, <if test='remark != null'>remark=#{remark},</if> 
+			apply_staff_id=#{approver}, update_by=#{approver}, version=version+1
+		where id=#{applyid}
+	</update>
+</mapper>

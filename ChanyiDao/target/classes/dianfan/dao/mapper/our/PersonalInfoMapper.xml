@@ -1,0 +1,62 @@
+<?xml version="1.0" encoding="UTF-8"?>    
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"    
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="dianfan.dao.mapper.our.PersonalInfoMapper">
+	<resultMap id="BaseResultMap" type="dianfan.entities.UserInfo">
+		<id column="id" property="id"/>
+		<result column="union_id" property="unionId"/>
+		<result column="wxpub_openid" property="wxpubOpenid"/>
+		<result column="wxsmall_openid" property="wxsmallOpenid"/>
+		<result column="nick_name" property="nickName"/>
+		<result column="sex" property="sex"/>
+		<result column="avatar_url" property="avatarUrl"/>
+		<result column="telno" property="telno"/>
+		<result column="area_code" property="areaCode"/>
+		<result column="bank_card_no" property="bankCardNo"/>
+		<result column="bank_card_name" property="bankCardName"/>
+		<result column="bank_short" property="bankShort"/>
+		<result column="locked" property="locked"/>
+		<result column="pwd" property="pwd"/>
+		<result column="qr_num" property="qrNum"/>
+		<result column="extra_id" property="extraId"/>
+		<result column="create_time" property="createTime"/>
+		<result column="create_by" property="createBy"/>
+		<result column="update_time" property="updateTime"/>
+		<result column="update_by" property="updateBy"/>
+	</resultMap>
+	<resultMap id="BaseResultMapPersonInfo" type="dianfan.entities.our.UserInfoModel">
+		<id column="id" property="id"/>
+		<result column="union_id" property="unionId"/>
+		<result column="nick_name" property="nickName"/>
+		<result column="sex" property="sex"/>
+		<result column="avatar_url" property="avatarUrl"/>
+		<result column="telno" property="telno"/>
+		<result column="qr_num" property="qrNum"/>
+		<result column="saler_qr_num" property="salerQrNum"/>
+		<result column="consumer_qr_num" property="consumerQrNum"/>
+		<result column="experiencestore_qr_num" property="experiencestoreQrNum"/>
+		<result column="role_name" property="roleName"/>
+		<result column="last_money" property="lastMoney"/>
+	</resultMap>
+	<select id="getUserInfo" parameterType="string" resultMap="BaseResultMapPersonInfo">
+		select uu.union_id,uu.nick_name,uu.sex,uu.avatar_url,uu.telno,uu.qr_num,uu.saler_qr_num,uu.last_money,uu.consumer_qr_num,uu.experiencestore_qr_num,umr.role_name from t_user_userinfo uu left join (select ur.userid,mr.role_name from t_user_role ur inner join m_role mr on ur.roleid=mr.id ) umr ON umr.userid=uu.id where uu.id = #{userId}
+	</select>
+	
+	<!-- 更新数据 -->
+	<update id="updateUserInfo" parameterType="dianfan.entities.UserInfo">
+		update t_user_userinfo  
+		 <set >
+      <if test="nickName != null and nickName !='' " >
+        nick_name = #{nickName},
+      </if>
+      <if test="sex != null and sex != '' " >
+        sex = #{sex},
+      </if>
+      <if test="avatarUrl != null and avatarUrl != '' " >
+        avatar_url = #{avatarUrl}, 
+      </if>
+      update_by = #{updateBy} 
+      </set>
+	  where id=#{id}
+	</update>
+</mapper> 

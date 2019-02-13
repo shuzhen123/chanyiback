@@ -1,0 +1,71 @@
+<?xml version="1.0" encoding="UTF-8"?>    
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"    
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="dianfan.dao.mapper.our.CollectionMapper">
+	<!--设置entities类和数据库中表的字段一一对应，注意数据库字段和实体类中的字段名称不致，此处一定要！ -->
+	<resultMap id="BaseResultMap" type="dianfan.entities.our.GoodsModel">
+		<id column="id" property="id"  />
+		<result column="goods_title" property="goodsTitle"  />
+		<result column="is_easy_spelling" property="isEasySpelling"  />
+		<result column="is_staff_easy_spelling" property="isStaffEasySpelling"  />
+		<result column="goods_title_en" property="goodsTitleEn"  />
+		<result column="goods_classify_id" property="goodsClassifyId"  />
+		<result column="goods_desc" property="goodsDesc"  />
+		<result column="price" property="price"  />
+		<result column="collection_num" property="collectionNum"  />
+		<result column="upperlower" property="upperlower"  />
+		<result column="goods_category" property="goodsCategory"  />
+		<result column="create_time" property="createTime"  />
+		<result column="entkbn" property="entkbn"  />
+		<result column="pic_addr" property="picAddr"  />
+	</resultMap>
+	<!-- 用户收藏表 -->
+	<resultMap id="BaseResultMapUgRelate" type="dianfan.entities.our.UserCollection">
+		<id column="id" property="id"  />
+		<result column="goods_id" property="goodsId"  />
+		<result column="user_id" property="userId"  />
+		<result column="entkbn" property="entkbn"  />
+	</resultMap>
+	  <sql id="Base_Column_List" >
+         id, goods_title, is_easy_spelling, is_staff_easy_spelling, goods_title_en, goods_desc, 
+         price, collection_num, upperlower, goods_category,pic_addr
+       </sql>
+	<!-- 查询商品id列表 -->
+	<select id="findGoodsIdList" parameterType="string" resultMap="BaseResultMapUgRelate">
+		select goods_id from t_user_collection where user_id = #{userId} and entkbn=0
+	</select>
+	<!-- 查询商品列表 -->
+	<select id="findGoodsList" parameterType="string" resultMap="BaseResultMap">
+		select <include refid="Base_Column_List" /> from t_goods_list where id in <foreach collection="goodsids" item="goodsid" open="(" close=")" separator=",">
+    #{goodsid}
+   </foreach>
+    order by create_time desc
+   </select>
+	<!-- 查询商品列表带图片 -->
+	<select id="findGoodsListPic" parameterType="map" resultMap="BaseResultMap">
+		select  <include refid="Base_Column_List" /> from t_goods_list gl left join t_goods_pics gp on gp.goods_id=gl.id where gl.id in <foreach collection="goodsids" item="goodsid" open="(" close=")" separator=",">
+     #{goodsid}
+   </foreach>  and gp.pic_type='01' and gp.pic_pc_mobile='02' and gp.entkbn=0 
+     order by gl.create_time desc  limit #{start},#{offset}
+	</select>
+	<!-- 查询商品列表总数 -->
+	<select id="getGoodsListPicNum" parameterType="map" resultType="Integer">
+		select count(DISTINCT gl.id) from t_goods_list gl left join t_goods_pics gp on gp.goods_id=gl.id where gl.id in <foreach collection="goodsids" item="goodsid" open="(" close=")" separator=",">
+    CAST(#{goodsid} AS signed)
+   </foreach>
+	</select>
+	<update id="delCollection" parameterType="map">
+	  update t_user_collection set entkbn=9 where goods_id in
+	  <foreach item="goodsid" collection="goodsids" open="(" separator="," close=")">
+            #{goodsid}
+        </foreach>
+        and user_id = #{userid} 
+	</update>
+	<!-- 商品数量减一 -->
+	<update id="updateGoodCollectionNum" parameterType="list">
+	  update t_goods_list set collection_num=collection_num-1 where id in
+	  <foreach item="goodsid" collection="goodsids" open="(" separator="," close=")">
+            #{goodsid}
+        </foreach> and collection_num &gt; 0
+	</update>
+</mapper> 

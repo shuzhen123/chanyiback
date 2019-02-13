@@ -1,0 +1,394 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="dianfan.dao.mapper.userManage.StaffMapper">
+	
+	<!-- 易盟员工数量 -->
+	<!-- 获取用户列表数量 -->
+	<select id="findUserCount" resultType="int">
+		select
+			count(*) 
+		from
+			<if test='regionscode != null and regionscode != ""'>
+				t_user_regions reg,
+			</if>
+			<if test='role == "806d7b177db111e88dd352540054a904" or
+					  role == "807725ad7db111e88dd352540054a904"'>
+				<!-- 二级搜索 -->
+				t_userinfo_extra ext,
+			</if>
+			t_user_userinfo info 
+			left join t_user_role role on info.id = role.userid 
+			left join m_role trole on role.roleid = trole.id
+			
+		where
+			info.entkbn != 9  and role.roleid != '808c51e37db111e88dd352540054a904'
+			<if test='regionscode != null and regionscode != ""'>
+				and reg.user_id=info.id and reg.entkbn=0 and reg.region_id=#{regionscode}
+			</if>
+			<if test='role == "806d7b177db111e88dd352540054a904" or
+					  role == "807725ad7db111e88dd352540054a904"'>
+				<!-- 二级搜索 -->
+				and ext.id=info.extra_id and ext.entkbn=0
+			</if>
+			<if test=' name != null and name != ""  ' >
+				<bind name="name_" value=" '%' + name + '%'  "/>
+				and info.nick_name like #{name_}
+			</if>
+			<if test='telno != null and telno != "" '>
+				<bind name="telno_" value="'%' + telno + '%'  "/>
+				and info.telno like #{telno_}
+			</if>
+			<!-- 通过区域搜索 -->
+			<if test='areacode != null and areacode != "" '>
+				<if test='role == "807c477e7db111e88dd352540054a904" or
+						role == "8081bddd7db111e88dd352540054a904" or
+						role == "8086fd317db111e88dd352540054a904"'>
+					<!-- 三级搜索 -->
+					and info.area_code = #{areacode}
+				</if>
+				<if test='role == "806d7b177db111e88dd352540054a904" or
+					  role == "807725ad7db111e88dd352540054a904"'>
+					<!-- 二级搜索 -->
+					and ext.area_code = #{areacode}
+				</if>
+			</if>
+			<!-- 通过角色搜索 -->
+			<if test='role != null and role != "" '>
+				and trole.id = #{role}
+			</if>
+	</select>
+	
+	<!-- 获取用户列表 -->
+	<select id="findUserList" parameterType="map" resultType="userInfo">
+		select 
+			staff.*, ifnull(gc.count,0) goodsCount
+		from
+		(
+			select
+				info.id ,
+				info.union_id unionId,
+				info.wxpub_openid wxpubOpenid,
+				info.wxsmall_openid wxsmallOpenid,
+				info.nick_name nickName,
+				info.country,
+				info.sex,
+				info.avatar_url avatarUrl,
+				info.telno,
+				info.area_code areaCode,
+				info.bank_card_no bankCardNo,
+				info.bank_card_name bankCardName,
+				info.bank_short bankShort,
+				info.qr_num qrNum,
+				info.extra_id extraId,
+				info.create_time createTime,
+				info.last_money lastMoney,
+				info.source,
+				info.entkbn,
+				info.locked,
+	
+				role.roleid roleid,
+				trole.role_name role
+			from
+				<if test='regionscode != null and regionscode != ""'>
+					t_user_regions reg,
+				</if>
+				<if test='role == "806d7b177db111e88dd352540054a904" or
+						  role == "807725ad7db111e88dd352540054a904"'>
+					<!-- 二级搜索 -->
+					t_userinfo_extra ext,
+				</if>
+				t_user_userinfo info 
+				left join t_user_role role on info.id = role.userid 
+				left join m_role trole on role.roleid = trole.id
+				
+			where
+				info.entkbn != 9  and role.roleid != '808c51e37db111e88dd352540054a904'
+				<if test='regionscode != null and regionscode != ""'>
+					and reg.user_id=info.id and reg.entkbn=0 and reg.region_id=#{regionscode}
+				</if>
+				<if test='role == "806d7b177db111e88dd352540054a904" or
+						  role == "807725ad7db111e88dd352540054a904"'>
+					<!-- 二级搜索 -->
+					and ext.id=info.extra_id and ext.entkbn=0
+				</if>
+				<if test=' name != null and name != ""  ' >
+					<bind name="name_" value=" '%' + name + '%'  "/>
+					and info.nick_name like #{name_}
+				</if>
+				<if test='telno != null and telno != "" '>
+					<bind name="telno_" value="'%' + telno + '%'  "/>
+					and info.telno like #{telno_}
+				</if>
+				<!-- 通过区域搜索 -->
+				<if test='areacode != null and areacode != "" '>
+					<if test='role == "807c477e7db111e88dd352540054a904" or
+							role == "8081bddd7db111e88dd352540054a904" or
+							role == "8086fd317db111e88dd352540054a904"'>
+						<!-- 三级搜索 -->
+						and info.area_code = #{areacode}
+					</if>
+					<if test='role == "806d7b177db111e88dd352540054a904" or
+						  role == "807725ad7db111e88dd352540054a904"'>
+						<!-- 二级搜索 -->
+						and ext.area_code = #{areacode}
+					</if>
+				</if>
+				<!-- 通过角色搜索 -->
+				<if test='role != null and role != "" '>
+					and trole.id = #{role}
+				</if>
+				order by info.create_time desc limit #{start},#{pageSize}
+			)staff left join
+			(
+				select 
+					gu.user_id, count(gu.goods_id) count
+				from 
+					t_goods_list gl, t_goods_user gu 
+				where 
+					gl.id=gu.goods_id and gl.entkbn!=9 and gu.entkbn=0 group by gu.user_id
+			)gc on staff.id=gc.user_id
+			order by staff.createTime desc
+	</select>
+	
+	<resultMap type="userInfo" id="staffDetailMap">
+		<id column="id" property="id"/>
+		<result column="nick_name" property="nickName"/>
+		<result column="country" property="country"/>
+		<result column="sex" property="sex"/>
+		<result column="avatar_url" property="avatarUrl"/>
+		<result column="telno" property="telno"/>
+		<result column="area_code" property="areaCode"/>
+		<result column="bank_card_no" property="bankCardNo"/>
+		<result column="bank_card_name" property="bankCardName"/>
+		<result column="bank_short" property="bankShort"/>
+		<result column="locked" property="locked"/>
+		<result column="extra_id" property="extraId"/>
+		<result column="create_time" property="createTime"/>
+		<result column="create_by" property="createBy"/>
+		<result column="update_time" property="updateTime"/>
+		<result column="update_by" property="updateBy"/>
+		<result column="entkbn" property="entkbn"/>
+		<result column="last_money" property="lastMoney"/>
+		<result column="source" property="source"/>
+		<result column="roleid" property="roleid"/>
+		<result column="role_name" property="role"/>
+		<result column="creater_name" property="createName"/>
+		<result column="updater_name" property="updateName"/>
+	</resultMap>
+	<!-- 根据员工id获取用户详情 -->
+	<select id="getStaffDetail" parameterType="string" resultMap="staffDetailMap">
+		select 
+			users.*, creater.nick_name creater_name, updater.nick_name updater_name
+		from
+			(select 
+				users.id, users.nick_name, users.country, users.sex, users.avatar_url, users.telno, users.area_code, users.bank_card_no, 
+				users.bank_card_name, users.bank_short, users.locked, users.extra_id, users.create_time, users.create_by, users.update_time, 
+				users.update_by, users.entkbn, users.last_money, users.source, ur.roleid, role.role_name
+			from 
+				t_user_userinfo users, t_user_role ur, m_role role
+			where 
+				ur.userid=users.id and ur.roleid=role.id and users.id=#{staffid}
+			)users
+			left join t_user_userinfo creater on users.create_by=creater.id
+			left join t_user_userinfo updater on users.update_by=updater.id
+	</select>
+	
+	<!-- 手机号码重复性检测 -->
+	<select id="checkPhone" resultType="boolean">
+		select
+			count(*)
+		from
+			t_user_role urole, t_user_userinfo users
+		where
+			urole.userid = users.id and users.entkbn != 9 and users.telno = #{telno} <if test='staffid != null'>and users.id != #{staffid}</if>
+	</select>
+	
+	<!-- 大区经理重复检测 -->
+	<select id="checkRegionalManager" resultType="boolean">
+		select
+			count(*)
+		from
+			t_user_regions reg, t_user_userinfo users
+		where
+			reg.user_id = users.id and users.entkbn != 9 and users.locked = 0 and reg.region_id = #{regionid} <if test='staffid != null'>and users.id != #{staffid}</if>
+	</select>
+	
+	<!-- 检测对应角色的用户是否存在 -->
+	<select id="checkCityManager" resultType="boolean">
+		select
+			count(*)
+		from
+			t_userinfo_extra ext, t_user_userinfo users, t_user_role role
+		where
+			ext.id = users.extra_id and users.id = role.userid and role.roleid = #{roleid} and users.entkbn != 9
+			and users.locked = 0 and ext.entkbn = 0 and ext.area_code = #{provCode} <if test='staffid != null'>and users.id != #{staffid}</if>
+	</select>
+	
+	<!-- 添加用户补充资料 -->
+	<insert id="addStaffExtra" parameterType="staffExtra">
+		insert into t_userinfo_extra 
+			(id, real_name, company_name, area_code, handle_idcard, idcard_no, idcard_font, idcard_back, 
+			idcard_valid_date, contract_url, create_time, create_by, business_license) 
+		values 
+			(#{id}, #{realName}, #{companyName}, #{areaCode}, #{handleIdcard}, #{idcardNo}, #{idcardFont}, #{idcardBack}, 
+			#{idcardValidDate}, #{contractUrl}, now(), #{createBy}, #{businessLicense})
+	</insert>
+	
+	<!-- 添加员工信息 -->
+	<insert id="addStaffInfo" parameterType="userInfo">
+		insert into t_user_userinfo
+			(id, nick_name, country, sex, telno, area_code, pwd, qr_num, extra_id, create_time, create_by, source) 
+		values 
+			(#{id}, #{nickName}, 'China', #{sex}, #{telno}, #{areaCode}, #{pwd}, replace(uuid(),'-',''), #{extraId}, now(), #{createBy}, #{source})
+	</insert>
+	
+	<!-- 修改上下级关系 -->
+	<update id="updateStaffRegionalRelation">
+		update t_user_lower_upper_relate set upper_user_id=#{regionsManageid}, version=version+1, update_by=#{operater} where down_user_id in
+		<foreach collection="staffs" item="item" open="(" separator="," close=")">#{item}</foreach>
+	</update>
+	
+	<!-- 获取此大区下的员工 -->
+	<select id="findRegionalStaff" parameterType="string" resultType="string">
+		select
+			users.id
+		from
+			t_userinfo_extra ext, t_user_userinfo users
+		where
+			ext.id = users.extra_id and ext.area_code in 
+			(
+				select 
+					city.area_code
+				from 
+					m_area_code prov, m_area_code city
+				where 
+					prov.area_code=city.sup_area_code and prov.region_id=#{regionid}
+			)
+	</select>
+	
+	<!-- 将区域下的城市经理转变为市场开发经理 -->
+	<update id="changeStaffRole">
+		update t_user_role set roleid='8072924c7db111e88dd352540054a904',descption='市场开发经理' where userid in
+		<foreach collection="staffs" item="item" open="(" separator="," close=")">#{item}</foreach>
+	</update>
+	
+	<resultMap type="staffExtra" id="staffExtraDetailMap">
+		<id column="id" property="id"/>
+		<result column="real_name" property="realName"/>
+		<result column="company_name" property="companyName"/>
+		<result column="area_code" property="areaCode"/>
+		<result column="handle_idcard" property="handleIdcard"/>
+		<result column="idcard_no" property="idcardNo"/>
+		<result column="idcard_font" property="idcardFont"/>
+		<result column="idcard_back" property="idcardBack"/>
+		<result column="idcard_valid_date" property="idcardValidDate"/>
+		<result column="contract_url" property="contractUrl"/>
+		<result column="create_time" property="createTime"/>
+		<result column="create_by" property="createBy"/>
+		<result column="update_time" property="updateTime"/>
+		<result column="update_by" property="updateBy"/>
+		<result column="entkbn" property="entkbn"/>
+		<result column="version" property="version"/>
+		<result column="business_license" property="businessLicense"/>
+	</resultMap>
+	<!-- 获取用户补充资料 -->
+	<select id="getStaffExtraInfo" parameterType="string" resultMap="staffExtraDetailMap">
+		select * from t_userinfo_extra where id=#{extraid}
+	</select>
+	
+	<!-- 获取对应大区经理id -->
+	<select id="getRegionsManageid" parameterType="string" resultType="string">
+		select 
+			users.id
+		from 
+			t_user_userinfo users,
+			t_user_regions reg,
+			(
+				select 
+					prov.region_id
+				from 
+					m_area_code prov, m_area_code city
+				where 
+					prov.area_code=city.sup_area_code and city.area_code=#{areaCode}
+			)regid
+		where 
+			reg.region_id=regid.region_id and reg.user_id=users.id
+			and reg.entkbn=0 and users.entkbn!=9 and users.locked=0
+	</select>
+	
+	<!-- 获取体验店上级（城市经理/运营服务商） -->
+	<select id="getStoreUpperid" parameterType="string" resultType="string">
+		select 
+			users.id
+		from 
+			t_user_role role, t_user_userinfo users, t_userinfo_extra ext
+		where 
+			role.userid=users.id and users.extra_id=ext.id and 
+			ext.area_code=(select sup_area_code from m_area_code where area_code=#{cityCode})
+			and role.roleid in ('806d7b177db111e88dd352540054a904','807725ad7db111e88dd352540054a904')
+	</select>
+	
+	
+	<select id="findMigrateStaffList2" parameterType="string" resultType="userInfo">
+		select 
+			users.id, users.nick_name nickName
+		from 
+			t_userinfo_extra ext,
+			t_user_userinfo users
+		where 
+			users.extra_id=ext.id and 
+			ext.area_code=(
+				select 
+					ext.area_code
+				from
+					t_user_userinfo users,
+					t_userinfo_extra ext
+				where 
+					users.extra_id=ext.id and users.id=#{staffid}
+			) and ext.entkbn=0 and users.entkbn!=9 and users.locked=0
+	</select>
+	
+	<select id="findMigrateStaffList3" parameterType="string" resultType="userInfo">
+		select 
+			users.id, users.nick_name nickName
+		from 
+			t_experiencestore_apply a1,
+			t_experiencestore_apply a2,
+			t_user_userinfo users
+		where 
+			a1.city_code=a2.city_code and a2.apply_user_id=users.id and
+			a1.apply_user_id=#{staffid} and a2.entkbn=0 and users.entkbn!=9 and users.locked=0
+	</select>
+	<!--修改用户补充资料  -->
+	<update id="updateUserExtra" parameterType="staffExtra">
+	update t_userinfo_extra set
+			<if test="realName !=null and realName !=''">real_name=#{realName}, </if>
+			<if test="companyName !=null and companyName !=''">company_name=#{companyName},  </if>
+			<if test="areaCode !=null and areaCode !=''">area_code=#{areaCode}, </if>
+			<if test="handleIdcard !=null and handleIdcard !=''">handle_idcard=#{handleIdcard}, </if>
+			<if test="idcardNo !=null and idcardNo !=''">idcard_no=#{idcardNo}, </if>
+			<if test="idcardFont !=null and idcardFont !=''">idcard_font=#{idcardFont},  </if>
+			<if test="idcardBack !=null and idcardBack !=''">idcard_back=#{idcardBack},  </if>
+			<if test="idcardValidDate !=null and idcardValidDate !=''">idcard_valid_date=#{idcardValidDate}, </if>
+			<if test="contractUrl !=null and contractUrl !=''">contract_url=#{contractUrl}, </if>
+			<if test="businessLicense !=null and businessLicense !=''">business_license=#{businessLicense},</if>
+			 update_by=#{updateBy},version=version+1 where id=#{id} and version=#{version}
+	</update>
+</mapper>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

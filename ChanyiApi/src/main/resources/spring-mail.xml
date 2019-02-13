@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://www.springframework.org/schema/beans
+	http://www.springframework.org/schema/beans/spring-beans.xsd">
+
+	<!--邮件发送实现类 -->
+	<bean id="javaMailSender" class="org.springframework.mail.javamail.JavaMailSenderImpl">
+		<property name="host" value="${hostip}" />
+		<property name="port" value="${hostport}" />
+		<property name="username" value="${hostusername}" />
+		<property name="password" value="${hostpassword}" />
+		<property name="javaMailProperties">
+			<props>
+				<prop key="mail.smtp.auth">true</prop>
+			</props>
+		</property>
+	</bean>
+
+	<bean id="simpleMailMessage" class="org.springframework.mail.SimpleMailMessage">
+		<property name="from" value="${hostfrom}" />
+	</bean>
+
+	<!--线程池异步发送邮件 -->
+	<bean id="taskExecutor"
+		class="org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor">
+		<property name="corePoolSize" value="${hostcorePoolSize}" />
+		<property name="maxPoolSize" value="${hostmaxPoolSize}" />
+		<property name="queueCapacity" value="${hostqueueCapacity}" />
+	</bean>
+	
+</beans>

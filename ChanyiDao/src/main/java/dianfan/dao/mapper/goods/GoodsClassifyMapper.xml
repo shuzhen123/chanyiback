@@ -1,0 +1,151 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="dianfan.dao.mapper.goods.GoodsClassifyMapper">
+<resultMap  id="goodsClassifyList" type="goodsClassify">
+		<id column="up_id" property="id"/>
+		<result column="up_classify_name" property="classifyName"/>
+		<result column="up_classify_name_en" property="classifyNameEn"/>
+		<result column="up_classify_level" property="classifyLevel"/>
+		<result column="up_sort" property="sort"/>
+		<result column="up_entkbn" property="entkbn"/>
+		<!-- 一对多 下级商品分类 -->
+		<collection property="lowerClassify" ofType="goodsClassify">
+			<id column="low_id" property="id"/>
+			<result column="low_classify_name" property="classifyName"/>
+			<result column="low_classify_name_en" property="classifyNameEn"/>
+			<result column="low_classify_level" property="classifyLevel"/>
+			<result column="low_sort" property="sort"/>
+			<result column="low_entkbn" property="entkbn"/>
+		</collection>
+	</resultMap>
+	<!-- 获取商品分类信息列表 -->
+	<select id="findGoodsClassifyList" parameterType="string" resultMap="goodsClassifyList">
+		select * 
+		from
+			(select 
+				id up_id, classify_name up_classify_name, classify_name_en up_classify_name_en, 
+				classify_level up_classify_level, entkbn up_entkbn, sort up_sort
+			from 
+				t_goods_classify 
+			where 
+				classify_level=0 and entkbn
+				<choose>
+					<when test='used == "1"'>
+						<!-- 获取可用列表 -->
+						=0
+					</when>
+					<otherwise>!=9</otherwise>
+				</choose>
+			) up left join
+			(select
+				id low_id, classify_parentid low_classify_parentid, classify_name low_classify_name, classify_name_en low_classify_name_en, 
+				classify_level low_classify_level, entkbn low_entkbn, sort low_sort
+			from 
+				t_goods_classify 
+			where 
+				classify_level=1 and entkbn
+				<choose>
+					<when test='used == "1"'>
+						<!-- 获取可用列表 -->
+						=0
+					</when>
+					<otherwise>!=9</otherwise>
+				</choose>
+			) low on up.up_id=low.low_classify_parentid
+			order by up.up_sort desc, low.low_sort desc
+	</select>
+	
+	<!-- 商品分类名称重复性检测 -->
+	<select id="checkGoodsClassifyName" resultType="boolean">
+		select 
+			count(*) 
+		from 
+			t_goods_classify 
+		where
+			classify_name=#{gc.classifyName} and classify_parentid=#{gc.classifyParentid} and entkbn != 9
+			<!-- 商品分类修改检测 -->
+			<if test="status == 1">and id != #{gc.id}</if>
+	</select>
+	
+	<!-- 修改商品分类 -->
+	<update id="editGoodsClassify" parameterType="goodsClassify">
+	 	update t_goods_classify set 
+	 		classify_name=#{classifyName},
+	 		classify_name_en=#{classifyNameEn},
+	 		sort=#{sort},
+	 		update_by=#{updateBy}
+	 	where id=#{id}
+	</update>
+	
+	<!-- 获取id为父节点的id列表 -->
+	<select id="findClassifyParentidByIds" parameterType="list" resultType="string">
+		select 
+			id 
+		from 
+			t_goods_classify 
+		where
+			classify_level = '0' and 
+			<foreach collection="array" item="item" open="(" separator=" or " close=")">id=#{item}</foreach>
+	</select>
+	
+	<!-- 删除/禁用/启用 商品分类 -->
+	<update id="delGoodsClassify">
+		update t_goods_classify set entkbn=#{entkbn}, update_by=#{updateBy}, version=version+1 where 
+		<if test="entkbn == 9">
+			<!-- 删除 -->
+			id=#{id} or classify_parentid=#{id}
+		</if>
+		<if test="entkbn == 1">
+			<!-- 禁用 -->
+			id=#{id} or classify_parentid=#{id}
+		</if>
+		<if test="entkbn == 0">
+			<!-- 启用 -->
+			id=#{id}
+		</if>
+	</update>
+	
+	<!-- 分类排序号检测 -->
+	<select id="checkGoodsClassifySort" parameterType="goodsClassify" resultType="boolean">
+		select 
+			count(*) 
+		from 
+			t_goods_classify 
+		where 
+			<if test='classifyParentid == null'>
+				<!-- 一级分类 -->
+				classify_level=0 and 
+			</if>
+			<if test='classifyParentid != null'>
+				<!-- 二级分类 -->
+				classify_parentid=#{classifyParentid} and classify_level=1 and
+			</if>
+			<if test='id != null'>
+				<!-- 二级分类 -->
+				id != #{id} and
+			</if>
+			entkbn=0 and sort=#{sort}
+	</select>
+	
+	<select id="cleanGoodsClassify">
+		update t_goods_list set goods_classify_id=null, update_by=#{updateBy}, version=version+1 where goods_classify_id in 
+		<foreach collection="classifyids" item="item" open="(" separator="," close=")">#{item}</foreach>
+	</select>
+</mapper>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

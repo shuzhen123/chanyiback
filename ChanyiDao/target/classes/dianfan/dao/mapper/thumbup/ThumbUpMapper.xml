@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="dianfan.dao.mapper.thumbup.ThumbUpMapper">
+	
+  <!-- 点赞resultmap -->
+  <resultMap id="thumbUpMap" type="dianfan.entities.advertorialthumbup.AdvertorialThumbUp" >
+    <id column="id" property="id"/>
+    <result column="user_id" property="userId"/>
+    <result column="advertorial_id" property="advertorialId"/>
+    <result column="create_time" property="createTime"/>
+    <result column="create_by" property="createBy"/>
+    <result column="update_time" property="updateTime"/>
+    <result column="update_by" property="updateBy"/>
+    <result column="entkbn" property="entkbn"/>
+    <result column="version" property="version"/>
+  </resultMap>
+	
+	<!-- 获取文章点赞表数据  -->
+	<select id="getAdvertorialThumbUp" parameterType="map" resultMap="thumbUpMap">
+		select * from t_advertorial_thumb_up where entkbn = 0 and user_id = #{userId} and advertorial_id = #{advertorialId}
+	</select>
+	
+	<!-- 新增文章点赞记录 -->
+	<insert id="insertThumbUp" parameterType="dianfan.entities.advertorialthumbup.AdvertorialThumbUp">
+		insert into t_advertorial_thumb_up (id,user_id,advertorial_id,create_time,create_by,entkbn) values (#{id},#{userId},#{advertorialId},#{createTime},#{createBy},#{entkbn})
+	</insert>
+
+	<!-- <insert id="insertThumbUp" parameterMap="thumbUpMap">
+		insert into t_advertorial_thumb_up (id,user_id,advertorial_id,create_time,create_by,entkbn) values (#{id},#{userId},#{advertorial_id},#{create_time},#{create_by},#{entkbn})
+	</insert> -->
+
+	<!-- 更新文章点赞记录(取消点赞) -->
+	<update id="updataThumbUp" parameterType="dianfan.entities.advertorialthumbup.AdvertorialThumbUp">
+		update t_advertorial_thumb_up set entkbn= 9 where id=#{id}
+	</update>
+
+</mapper>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

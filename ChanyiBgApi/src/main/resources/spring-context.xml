@@ -1,0 +1,109 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:tx="http://www.springframework.org/schema/tx"
+	xmlns:aop="http://www.springframework.org/schema/aop" xmlns:context="http://www.springframework.org/schema/context"
+	xsi:schemaLocation="http://www.springframework.org/schema/beans
+	http://www.springframework.org/schema/beans/spring-beans.xsd
+	http://www.springframework.org/schema/tx
+	http://www.springframework.org/schema/tx/spring-tx.xsd
+	http://www.springframework.org/schema/aop
+	http://www.springframework.org/schema/aop/spring-aop.xsd
+	http://www.springframework.org/schema/context
+	http://www.springframework.org/schema/context/spring-context.xsd">
+	<context:component-scan base-package="dianfan">
+		<!-- annotation为spting-mvc中解析的内容 -->
+		<context:exclude-filter type="annotation"
+			expression="org.springframework.stereotype.Controller" />
+	</context:component-scan>
+
+	<!-- 引入属性文件 -->
+	<context:property-placeholder
+		location="classpath:*/db-${spring.profiles.active}.properties,
+		classpath:*/mail-${spring.profiles.active}.properties,
+		classpath:*/config-${spring.profiles.active}.properties"
+		file-encoding="UTF-8" />
+
+	<!-- 配置数据源 -->
+	<!--写库数据源 writeDataSource -->
+	<bean id="writeDataSource" class="com.alibaba.druid.pool.DruidDataSource"
+		init-method="init" destroy-method="close">
+		<property name="url" value="${urlRW}" />
+		<property name="driverClassName" value="${driverClassNameRW}" />
+		<property name="username" value="${usernameRW}" />
+		<property name="password" value="${passwordRW}" />
+		<!--公用配置 -->
+		<property name="initialSize" value="${initialSize}" />
+		<property name="maxActive" value="${maxActive}" />
+		<property name="minIdle" value="${minIdle}" />
+		<property name="maxWait" value="${maxWait}" />
+		<property name="validationQuery" value="${validationQuery}" />
+		<property name="testWhileIdle" value="${testWhileIdle}" />
+		<property name="testOnBorrow" value="${testOnBorrow}" />
+		<property name="testOnReturn" value="${testOnReturn}" />
+		<property name="timeBetweenEvictionRunsMillis" value="${timeBetweenEvictionRunsMillis}" />
+		<property name="minEvictableIdleTimeMillis" value="${minEvictableIdleTimeMillis}" />
+		<property name="removeAbandoned" value="${removeAbandoned}" />
+		<property name="removeAbandonedTimeout" value="${removeAbandonedTimeout}" />
+		<property name="logAbandoned" value="${logAbandoned}" />
+		<!-- 监控数据库 -->
+		<property name="filters" value="mergeStat" />
+	</bean>
+	<!--读库对应的数据源 readDataSource -->
+	<bean id="readDataSource" class="com.alibaba.druid.pool.DruidDataSource"
+		init-method="init" destroy-method="close">
+		<property name="url" value="${urlR}" />
+		<property name="driverClassName" value="${driverClassNameR}" />
+		<property name="username" value="${usernameR}" />
+		<property name="password" value="${passwordR}" />
+		<!--公用配置 -->
+		<property name="initialSize" value="${initialSize}" />
+		<property name="maxActive" value="${maxActive}" />
+		<property name="minIdle" value="${minIdle}" />
+		<property name="maxWait" value="${maxWait}" />
+		<property name="validationQuery" value="${validationQuery}" />
+		<property name="testWhileIdle" value="${testWhileIdle}" />
+		<property name="testOnBorrow" value="${testOnBorrow}" />
+		<property name="testOnReturn" value="${testOnReturn}" />
+		<property name="timeBetweenEvictionRunsMillis" value="${timeBetweenEvictionRunsMillis}" />
+		<property name="minEvictableIdleTimeMillis" value="${minEvictableIdleTimeMillis}" />
+		<property name="removeAbandoned" value="${removeAbandoned}" />
+		<property name="removeAbandonedTimeout" value="${removeAbandonedTimeout}" />
+		<property name="logAbandoned" value="${logAbandoned}" />
+		<!-- 监控数据库 -->
+		<property name="filters" value="mergeStat" />
+	</bean>
+
+	<bean id="dataSource" class="dianfan.datasource.DynamicDataSource">
+		<property name="writeDataSource" ref="writeDataSource"></property>
+		<property name="readDataSource" ref="readDataSource"></property>
+	</bean>
+
+	<!-- 事务管理器 -->
+	<bean id="transactionManager" class="dianfan.datasource.DynamicDataSourceTransactionManager">
+		<property name="dataSource" ref="dataSource" />
+	</bean>
+
+	<!-- enables scanning for @Transactional annotations -->
+	<tx:annotation-driven transaction-manager="transactionManager" />
+	<!-- 配置SqlSessionFactory -->
+	<bean id="sqlSessionFactoryBean" class="org.mybatis.spring.SqlSessionFactoryBean">
+		<property name="dataSource" ref="dataSource" />
+		<!-- 配置SqlMapConfig.xml -->
+		<property name="configLocation" value="classpath:SqlMapConfig.xml" />
+		<!-- 配置插件 -->
+		<property name="plugins">
+			<array>
+				<bean class="dianfan.interceptor.DynamicPlugin" />
+			</array>
+		</property>
+	</bean>
+
+	<!-- 使用mapper批量扫描器 -->
+	<bean class="org.mybatis.spring.mapper.MapperScannerConfigurer">
+		<!-- 会话工厂 -->
+		<property name="sqlSessionFactoryBeanName" value="sqlSessionFactoryBean" />
+		<!-- 扫描包路径 多个包中间用半角逗号分隔 -->
+		<property name="basePackage" value="dianfan.dao.mapper.*" />
+	</bean>
+
+</beans>

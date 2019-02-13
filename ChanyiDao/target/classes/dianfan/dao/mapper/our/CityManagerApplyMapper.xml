@@ -1,0 +1,92 @@
+<?xml version="1.0" encoding="UTF-8"?>    
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"    
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="dianfan.dao.mapper.our.CityManagerApplyMapper">
+		<resultMap id="BaseResultMapRole" type="dianfan.entities.role.Role">
+		<id column="id" property="id" />
+		<result column="role_distinguish" property="roleDistinguish" />
+		<result column="role_name" property="roleName" />
+		<result column="create_time" property="createTime" />
+		<result column="role_description" property="roleDescription" />
+		<result column="sale_discount" property="saleDiscount" />
+		<result column="entkbn" property="entkbn" />
+	</resultMap>
+	<!-- 申请成为城市经理-->
+	<insert id="addCityManagerApply" parameterType="dianfan.entities.our.CityManagerApply">
+		insert into t_citymanager_apply
+		(id,status,telno,apply_user_id,create_time,entkbn,create_by,apply_name)
+		values
+		(#{id},#{status},#{telno},#{applyUserId},now(),0,#{createBy},#{applyname})
+	</insert>
+	<update id="updateCityManagerApply" parameterType="dianfan.entities.our.CityManagerApply">
+	update t_citymanager_apply set telno=#{telno},apply_name=#{applyname},update_by=#{updateBy},version=version+1 where apply_user_id=#{applyUserId} and version=#{version}
+	</update>
+	<!-- 城市经理申请审批(失败) -->
+	<update id="updateCityManagerApplyStatus" parameterType="dianfan.entities.our.CityManagerApply">
+	update t_citymanager_apply set status=#{status},update_by=#{updateBy},
+	<if test="fReason !=null and fReason !=''">f_reason=#{fReason},</if>
+	version=version+1 where id=#{id} and version=#{version}
+	</update>
+	<select id="getCityManagerApply" parameterType="string" resultType="int">
+	     select count(*) from t_citymanager_apply where apply_user_id = #{userid} and entkbn=0
+	</select>
+	<!-- <select id="getCityManagerApplyByPhone" parameterType="string" resultType="int">
+     	select count(*) from t_citymanager_apply where telno = #{telno} and entkbn=0
+	</select> -->
+		<update id="updateCityManagerApplyRole" parameterType="userRole">
+		update t_user_role set roleid = #{roleid},descption = #{descption} where userid=#{userid}
+	</update>
+	<select id="getUserRole" parameterType="string" resultMap="BaseResultMapRole">
+	select id,role_distinguish,role_name from m_role where  entkbn=0 and role_distinguish = #{roledistinguish}
+	</select>
+	<!--  后台 根据条件获取城市经理个数 -->
+	<select id="getCityManagerNum" parameterType="dianfan.entities.our.CityManagerModel" resultType="int">
+	select count(*) from t_citymanager_apply tca inner join t_user_userinfo tuu on tca.apply_user_id=tuu.id left join t_userinfo_extra tue on tue.id=tuu.extra_id where  
+	<if test="status !='' and status !=null"> tca.status = #{status} and </if>
+	<if test="applyname !='' and applyname !=null"> 
+	<bind name="_applyname" value="'%'+applyname+'%'"/>
+	tca.apply_name like #{_applyname} and </if>
+	<if test="realName !='' and realName !=null"> 
+	<bind name="_realname" value="'%'+realName+'%'"/>
+	tue.real_name like #{_realname} and </if>
+	<if test="idcardNo !='' and idcardNo !=null"> 
+	<bind name="_idcardNo" value="'%'+idcardNo+'%'"/>
+	tue.idcard_no like #{_idcardNo} and </if>
+	<if test="createTimeStart !='' and createTimeEnd == '' and createTimeStart !=null and createTimeEnd == null"> tca.create_time &gt; #{createTimeStart} and </if>
+	<if test="createTimeStart =='' and createTimeEnd !='' and createTimeStart ==null and createTimeEnd !=null">  tca.create_time &lt;= #{createTimeEnd} and </if>
+	<if test="createTimeStart !='' and createTimeEnd !='' and createTimeStart !=null and createTimeEnd !=null">  (tca.create_time between #{createTimeStart} and #{createTimeEnd}) and </if> 
+	 tca.entkbn=0 and tue.entkbn=0 and tuu.entkbn !=9 order by tca.create_time desc
+	</select>
+	<!-- ================后台====================== -->
+	<!-- <select id="getCityManagerInfo" parameterType="string" resultMap="BaseResultMap">
+	select id,apply_name,real_name,idcard_no,idcard_font,idcard_back,idcard_valid_date,handle_idcard,apply_phone_num,apply_addr,status,f_reason,user_id,create_time from t_cooperation_apply where id=#{operaserverid}
+	</select> -->
+	<!--  后台 根据条件获取城市经理列表 -->
+	<select id="findCityManagerApplyList" parameterType="dianfan.entities.our.CityManagerModel" resultType="dianfan.entities.our.CityManagerModel">
+	select tca.id,tca.apply_name applyname,tca.`status`,tca.f_reason fReason,tca.telno,tuu.nick_name nickName,tca.create_time createTime,tue.area_code areaCode,tue.handle_idcard handleIdcard,tue.idcard_back idcardBack,tue.idcard_font idcardFont,tue.idcard_no idcardNo,tue.idcard_valid_date idcardValidDate,tue.real_name realName from t_citymanager_apply tca inner join t_user_userinfo tuu on tca.apply_user_id=tuu.id left join t_userinfo_extra tue on tue.id=tuu.extra_id where
+	<if test="status !='' and status !=null"> tca.status = #{status} and </if>
+	<if test="applyname !='' and applyname !=null"> 
+	<bind name="_applyname" value="'%'+applyname+'%'"/>
+	tca.apply_name like #{_applyname} and </if>
+	<if test="realName !='' and realName !=null"> 
+	<bind name="_realname" value="'%'+realName+'%'"/>
+	tue.real_name like #{_realname} and </if>
+	<if test="idcardNo !='' and idcardNo !=null"> 
+	<bind name="_idcardNo" value="'%'+idcardNo+'%'"/>
+	tue.idcard_no like #{_idcardNo} and </if>
+	<if test="createTimeStart !='' and createTimeEnd == '' and createTimeStart !=null and createTimeEnd == null"> tca.create_time &gt; #{createTimeStart} and </if>
+	<if test="createTimeStart =='' and createTimeEnd !='' and createTimeStart ==null and createTimeEnd !=null">  tca.create_time &lt;= #{createTimeEnd} and </if>
+	<if test="createTimeStart !='' and createTimeEnd !='' and createTimeStart !=null and createTimeEnd !=null">  (tca.create_time between #{createTimeStart} and #{createTimeEnd}) and </if> 
+	 tca.entkbn=0 and tue.entkbn=0 and tuu.entkbn !=9 order by tca.status desc,tca.create_time desc limit #{start},#{offset}
+	</select>
+	<!-- 检测对应角色的用户是否存在 -->
+	<select id="checkCityManager" resultType="boolean">
+		select
+			count(*)
+		from
+			t_userinfo_extra ext, t_user_userinfo users, t_user_role role
+		where
+			ext.id = users.extra_id and users.id = role.userid and role.roleid = #{roleid} and users.entkbn != 9
+			and users.locked = 0 and ext.entkbn = 0 and ext.area_code = #{provCode} <if test='staffid != null'>and users.id != #{staffid}</if>
+	</select>
+</mapper> 

@@ -1,0 +1,116 @@
+<?xml version="1.0" encoding="UTF-8"?>    
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"    
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="dianfan.dao.mapper.our.CoopereApplyMapper">
+	<resultMap id="BaseResultMap" type="dianfan.entities.our.CooperationApply">
+		<id column="id" property="id" />
+		<result column="status" property="status" />
+		<result column="apply_name" property="applyName" />
+		<result column="apply_phone_num" property="applyPhoneNum" />
+		<result column="apply_addr" property="applyAddr" />
+		<result column="user_id" property="userId" />
+		<result column="create_time" property="createTime" />
+		<result column="create_by" property="createBy" />
+		<result column="update_time" property="updateTime" />
+		<result column="update_by" property="updateBy" />
+		<result column="entkbn" property="entkbn" />
+		<result column="version" property="version" />
+		<result column="real_name" property="realName" />
+		<result column="idcard_no" property="idcardNo" />
+		<result column="idcard_font" property="idcardFont" />
+		<result column="idcard_back" property="idcardBack" />
+		<result column="idcard_valid_date" property="idcardValidDate" />
+		<result column="handle_idcard" property="handleIdcard" />
+		<result column="f_reason" property="fReason" />
+	</resultMap>
+		<resultMap id="BaseResultMapRole" type="dianfan.entities.role.Role">
+		<id column="id" property="id" />
+		<result column="role_distinguish" property="roleDistinguish" />
+		<result column="role_name" property="roleName" />
+		<result column="create_time" property="createTime" />
+		<result column="role_description" property="roleDescription" />
+		<result column="sale_discount" property="saleDiscount" />
+		<result column="entkbn" property="entkbn" />
+	</resultMap>
+	<!-- 申请成为运营服务商-->
+	<insert id="addCoopereApply" parameterType="dianfan.entities.our.CooperationApply" useGeneratedKeys="true" keyProperty="id">
+	 <selectKey keyProperty="id" resultType="int" order="BEFORE">
+             select if(max(id) is null, 1, max(id) + 1) as newId from t_cooperation_apply
+     </selectKey>
+		insert into t_cooperation_apply
+		(id,status,apply_name,apply_phone_num,apply_addr,user_id,create_time,entkbn,idcard_no,idcard_font,idcard_back,idcard_valid_date,real_name,create_by,handle_idcard)
+		values
+		(#{id},#{status},#{applyName},#{applyPhoneNum},#{applyAddr},#{userId},now(),0,#{idcardNo},#{idcardFont},#{idcardBack},#{idcardValidDate},#{realName},#{createBy},#{handleIdcard})
+	</insert>
+	<update id="updateCoopereApply" parameterType="dianfan.entities.our.CooperationApply">
+	update t_cooperation_apply set apply_name=#{applyName},apply_phone_num=#{applyPhoneNum},idcard_no=#{idcardNo},idcard_font=#{idcardFont},idcard_back=#{idcardBack},idcard_valid_date=#{idcardValidDate},real_name=#{realName},handle_idcard=#{handleIdcard},update_by=#{updateBy},create_time=now(),version=version+1 where user_id=#{userId} and version=#{version}
+	</update>
+	<!-- 运营商申请审批 -->
+	<update id="updateCoopereApplyStatus" parameterType="dianfan.entities.our.CooperationApply">
+	update t_cooperation_apply set status=#{status},update_by=#{updateBy},
+	<if test="fReason !=null and fReason !=''">f_reason=#{fReason},</if>
+	version=version+1 where id=#{id} and version=#{version}
+	</update>
+	<select id="getCooperationApply" parameterType="string" resultType="int">
+	     select count(*) from t_cooperation_apply where user_id = #{userid} and entkbn=0
+	</select>
+	<select id="getCooperationApplyByPhone" parameterType="string" resultType="int">
+     	select count(*) from t_cooperation_apply where apply_phone_num = #{phonenum} and entkbn=0
+	</select>
+		<update id="updateCooperationApplyRole" parameterType="userRole">
+		update t_user_role set roleid = #{roleid},descption = #{descption} where userid=#{userid}
+	</update>
+	<select id="getUserRole" parameterType="string" resultMap="BaseResultMapRole">
+	select id,role_distinguish,role_name from m_role where  entkbn=0 and role_distinguish = #{roledistinguish}
+	</select>
+	<!--  后台 根据条件获取运营服务商个数 -->
+	<select id="getOperateServicerNum" parameterType="dianfan.entities.our.CooperationApply" resultType="int">
+	select count(*) from t_cooperation_apply where 
+	<if test="status !='' and status !=null"> status = #{status} and </if>
+	<if test="applyName !=''"> 
+	<bind name="_applyname" value="'%' +applyName+'%' " />
+	apply_name like #{_applyname} and </if>
+	<if test="realName !=''"> 
+	<bind name="_realname" value="'%'+realName+'%'"/>
+	real_name like #{_realname} and </if>
+	<if test="idcardNo !='' and idcardNo !=null"> 
+	<bind name="_idcardNo" value="'%'+idcardNo+'%'"/>
+	idcard_no like #{_idcardNo} and </if>
+	<if test="createTimeStart !='' and createTimeEnd == ''"> create_time &gt; #{createTimeStart} and </if>
+	<if test="createTimeStart !='' and createTimeEnd !=''">  create_time &lt;= #{createTimeEnd} and </if>
+	<if test="createTimeStart !='' and createTimeEnd !=''">  (create_time &gt; #{createTimeStart} and create_time &lt;= #{createTimeEnd}) and </if> 
+	 entkbn=0
+	</select>
+	<!-- ================后台====================== -->
+	<select id="getOperateServicer" parameterType="string" resultMap="BaseResultMap">
+	select id,apply_name,real_name,idcard_no,idcard_font,idcard_back,idcard_valid_date,handle_idcard,apply_phone_num,apply_addr,status,f_reason,user_id,create_time from t_cooperation_apply where id=#{operaserverid}
+	</select>
+	<!--  后台 根据条件获取运营服务商列表 -->
+	<select id="findOperateServicerList" parameterType="dianfan.entities.our.CooperationApply" resultMap="BaseResultMap">
+	select id,apply_name,real_name,idcard_no,idcard_font,idcard_back,idcard_valid_date,handle_idcard,apply_phone_num,apply_addr,status,f_reason,user_id,create_time from t_cooperation_apply where 
+	<if test="status !='' and status !=null"> status = #{status} and </if>
+	<if test="applyName !=''"> 
+	<bind name="_applyname" value="'%' +applyName+'%' " />
+	apply_name like #{_applyname} and </if>
+	<if test="realName !=''"> 
+	<bind name="_realname" value="'%'+realName+'%'"/>
+	real_name like #{_realname} and </if>
+	<if test="idcardNo !='' and idcardNo !=null"> 
+	<bind name="_idcardNo" value="'%'+idcardNo+'%'"/>
+	idcard_no like #{_idcardNo} and </if>
+	<if test="createTimeStart !='' and createTimeEnd == ''"> create_time &gt; #{createTimeStart} and </if>
+	<if test="createTimeStart !='' and createTimeEnd !=''">  create_time &lt;= #{createTimeEnd} and </if>
+	<if test="createTimeStart !='' and createTimeEnd !=''">  (create_time &gt; #{createTimeStart} and create_time &lt;= #{createTimeEnd}) and </if> 
+	 entkbn=0 order by status desc,create_time desc limit #{start},#{offset}
+	</select>
+	<!-- 检测对应角色的用户是否存在 -->
+	<select id="checkCityManager" resultType="boolean">
+		select
+			count(*)
+		from
+			t_userinfo_extra ext, t_user_userinfo users, t_user_role role
+		where
+			ext.id = users.extra_id and users.id = role.userid and role.roleid = #{roleid} and users.entkbn != 9
+			and users.locked = 0 and ext.entkbn = 0 and ext.area_code = #{provCode} <if test='staffid != null'>and users.id != #{staffid}</if>
+	</select>
+</mapper> 

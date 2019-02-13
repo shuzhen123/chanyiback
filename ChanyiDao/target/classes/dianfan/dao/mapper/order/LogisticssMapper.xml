@@ -1,0 +1,122 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="dianfan.dao.mapper.order.LogisticssMapper">
+	
+	<!-- 获取订单下的物流信息map -->
+	<resultMap type="dianfan.entities.order.OrderDeliveryRelates" id="findLogisticsInfomap">
+		<id column="id" property="id"/>
+		<result column="order_id" property="orderId"/> 
+		<result column="delivery_id" property="deliveryId"/> 
+		<!-- 订单下的物流信息 -->
+		<collection property="logistics" ofType="dianfan.entities.logistics.LogisticsModel">
+			<id column="wid" property="id"/>
+			<result column="delivery_no" property="deliveryNo"/>		
+		</collection>
+	</resultMap>
+	
+	<!-- 获取订单下的物流信息（正常下单） -->
+	<select id="findLogisticsInfo" resultMap="findLogisticsInfomap">
+		SELECT
+			tdr.id,
+			tdr.order_id,
+			tdr.delivery_id,
+			td.id wid,
+			td.delivery_no
+		FROM
+			t_order_delivery_relate tdr
+		INNER JOIN t_delivery td ON tdr.delivery_id = td.id
+		WHERE
+			tdr.delivery_type = 01
+		AND tdr.delivery_status != 02
+		AND tdr.entkbn = 0
+		AND td.entkbn = 0
+	</select>
+	
+	<!-- 获取订单下的物流信息 （退货物流）-->
+	<select id="findLogisticsInfoToSales" resultMap="findLogisticsInfomap">
+		SELECT
+			tdr.id,
+			tdr.order_id,
+			tdr.delivery_id,
+			td.id wid,
+			td.delivery_no
+		FROM
+			t_order_delivery_relate tdr
+		INNER JOIN t_delivery td ON tdr.delivery_id = td.id
+		WHERE
+			tdr.delivery_type = 02
+		AND tdr.delivery_status != 02
+		AND tdr.entkbn = 0
+		AND td.entkbn = 0
+	</select>
+	<!-- 获取订单下的物流信息 （退货验收失败退回）-->
+	<select id="findLogisticsInfoToRetreatCheck" resultMap="findLogisticsInfomap">
+		SELECT
+			tdr.id,
+			tdr.order_id,
+			tdr.delivery_id,
+			td.id wid,
+			td.delivery_no
+		FROM
+			t_order_delivery_relate tdr
+		INNER JOIN t_delivery td ON tdr.delivery_id = td.id
+		WHERE
+			tdr.delivery_type = 03
+		AND tdr.delivery_status != 02
+		AND tdr.entkbn = 0
+		AND td.entkbn = 0
+	</select>
+	<!-- 获取订单下的物流信息 （换货重新发货）-->
+	<select id="findLogisticsInfoToRetreatAgain" resultMap="findLogisticsInfomap">
+		SELECT
+			tdr.id,
+			tdr.order_id,
+			tdr.delivery_id,
+			td.id wid,
+			td.delivery_no
+		FROM
+			t_order_delivery_relate tdr
+		INNER JOIN t_delivery td ON tdr.delivery_id = td.id
+		WHERE
+			tdr.delivery_type = 04
+		AND tdr.delivery_status != 02
+		AND tdr.entkbn = 0
+		AND td.entkbn = 0
+	</select>
+	
+	<!-- 获取订单下的物流信息 （换货验收失败退回）-->
+	<select id="findLogisticsInfoToTrade" resultMap="findLogisticsInfomap">
+		SELECT
+			tdr.id,
+			tdr.order_id,
+			tdr.delivery_id,
+			td.id wid,
+			td.delivery_no
+		FROM
+			t_order_delivery_relate tdr
+		INNER JOIN t_delivery td ON tdr.delivery_id = td.id
+		WHERE
+			tdr.delivery_type = 05
+		AND tdr.delivery_status != 02
+		AND tdr.entkbn = 0
+		AND td.entkbn = 0
+	</select>
+	
+</mapper>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
